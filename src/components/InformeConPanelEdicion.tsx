@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { FileText, Download, Edit, Save, X, ChevronRight, Trash2, Plus } from 'lucide-react';
-import { RegistroDiario, ItemTabla, ItemFactura } from '@/types';
+import { RegistroDiario, ItemTabla, ItemFactura, Firma } from '@/types';
 import { useFirmas } from '@/hooks/UseFirmas';
 import { generarItemsTabla, calcularTotalDonaciones, calcularTotalGeneral } from '@/utils/calculosInforme';
 
@@ -9,13 +9,15 @@ interface InformeConPanelEdicionProps {
   itemsFacturas: ItemFactura[];
   onNuevoInforme: () => void;
   onActualizarRegistros?: (registrosActualizados: RegistroDiario[], itemsActualizados: ItemTabla[], itemsFacturasActualizados: ItemFactura[]) => void;
+  firmasExternas?: { trabajador?: Firma[], supervisor?: Firma[], responsable?: Firma[] };
 }
 
 export const InformeConPanelEdicion: React.FC<InformeConPanelEdicionProps> = ({ 
   registros,
   itemsFacturas: itemsFacturasIniciales,
   onNuevoInforme,
-  onActualizarRegistros 
+  onActualizarRegistros,
+  firmasExternas
 }) => {
   const [panelAbierto, setPanelAbierto] = useState(false);
   const [registrosEditables, setRegistrosEditables] = useState<RegistroDiario[]>(registros);
@@ -23,8 +25,11 @@ export const InformeConPanelEdicion: React.FC<InformeConPanelEdicionProps> = ({
   const [itemsGuardados, setItemsGuardados] = useState<ItemTabla[]>(generarItemsTabla(registros));
   const [itemsFacturasEditables, setItemsFacturasEditables] = useState<ItemFactura[]>(itemsFacturasIniciales);
   const [itemsFacturasGuardados, setItemsFacturasGuardados] = useState<ItemFactura[]>(itemsFacturasIniciales);
+  
+  // Usar firmas externas si están disponibles, sino cargar del hook
+  const { firmas: firmasDelHook } = useFirmas();
+  const firmas = firmasExternas || firmasDelHook;
   const [tabActiva, setTabActiva] = useState<'general' | 'donaciones' | 'facturas' | 'firmas'>('general');
-  const { firmas } = useFirmas();
 
   // Usar items guardados cuando el panel está cerrado, items editables cuando está abierto
   const items = panelAbierto ? itemsEditables : itemsGuardados;
@@ -726,7 +731,7 @@ export const InformeConPanelEdicion: React.FC<InformeConPanelEdicionProps> = ({
                   className="w-full p-3 border-2 border-gray-300 rounded-lg focus:border-orange-500 focus:outline-none"
                 >
                   <option value="">Seleccionar...</option>
-                  {firmas.trabajador.map(f => (
+                  {firmas?.trabajador?.map(f => (
                     <option key={f.nombre} value={f.nombre}>{f.nombre}</option>
                   ))}
                 </select>
@@ -740,7 +745,7 @@ export const InformeConPanelEdicion: React.FC<InformeConPanelEdicionProps> = ({
                   className="w-full p-3 border-2 border-gray-300 rounded-lg focus:border-orange-500 focus:outline-none"
                 >
                   <option value="">Seleccionar...</option>
-                  {firmas.supervisor.map(f => (
+                  {firmas?.supervisor?.map(f => (
                     <option key={f.nombre} value={f.nombre}>{f.nombre}</option>
                   ))}
                 </select>
@@ -754,7 +759,7 @@ export const InformeConPanelEdicion: React.FC<InformeConPanelEdicionProps> = ({
                   className="w-full p-3 border-2 border-gray-300 rounded-lg focus:border-orange-500 focus:outline-none"
                 >
                   <option value="">Seleccionar...</option>
-                  {firmas.responsable.map(f => (
+                  {firmas?.responsable?.map(f => (
                     <option key={f.nombre} value={f.nombre}>{f.nombre}</option>
                   ))}
                 </select>
