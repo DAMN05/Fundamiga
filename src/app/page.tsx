@@ -141,7 +141,14 @@ export default function SistemaControlDonaciones() {
                 setMostrarMultiplesInformes(false);
                 setMostrarInforme(false);
               }}
-              onActualizarRegistros={() => {}}
+              onActualizarRegistros={(registrosActualizados, itemsActualizados, itemsFacturasActualizados) => {
+                // Actualizar el informe específico en el array
+                setInformes(informes.map(inf => 
+                  inf.id === informe.id 
+                    ? { ...inf, registros: registrosActualizados, itemsFacturas: itemsFacturasActualizados }
+                    : inf
+                ));
+              }}
             />
           </div>
         ))}
