@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FileText, Download, Edit, Save, X, ChevronRight, Trash2, Plus } from 'lucide-react';
+import { FileText, Download, Edit, Save, X, ChevronRight, Trash2, Plus , Info,ChevronDown,User,CheckCircle2 , ShieldCheck, Printer} from 'lucide-react';
 import { RegistroDiario, ItemTabla, ItemFactura, Firma } from '@/types';
 import { useFirmas } from '@/hooks/UseFirmas';
 import { generarItemsTabla, calcularTotalDonaciones, calcularTotalGeneral } from '@/utils/calculosInforme';
@@ -11,6 +11,9 @@ interface InformeConPanelEdicionProps {
   onActualizarRegistros?: (registrosActualizados: RegistroDiario[], itemsActualizados: ItemTabla[], itemsFacturasActualizados: ItemFactura[]) => void;
   firmasExternas?: { trabajador?: Firma[], supervisor?: Firma[], responsable?: Firma[] };
 }
+
+type TabId = 'general' | 'donaciones' | 'facturas' | 'firmas';
+type FirmaRol = 'trabajador' | 'supervisor' | 'responsable';
 
 export const InformeConPanelEdicion: React.FC<InformeConPanelEdicionProps> = ({ 
   registros,
@@ -28,8 +31,18 @@ export const InformeConPanelEdicion: React.FC<InformeConPanelEdicionProps> = ({
   
   // Usar firmas externas si están disponibles, sino cargar del hook
   const { firmas: firmasDelHook } = useFirmas();
-  const firmas = firmasExternas || firmasDelHook;
-  const [tabActiva, setTabActiva] = useState<'general' | 'donaciones' | 'facturas' | 'firmas'>('general');
+  const firmas: Record<FirmaRol, Firma[]> = {
+    trabajador: firmasExternas?.trabajador ?? firmasDelHook.trabajador ?? [],
+    supervisor: firmasExternas?.supervisor ?? firmasDelHook.supervisor ?? [],
+    responsable: firmasExternas?.responsable ?? firmasDelHook.responsable ?? []
+  };
+  const tabs: TabId[] = ['general', 'donaciones', 'facturas', 'firmas'];
+  const roles: Array<{ id: FirmaRol; label: string; icon: React.ReactNode }> = [
+    { id: 'trabajador', label: 'Trabajador / Operador', icon: <User size={16} /> },
+    { id: 'supervisor', label: 'Supervisor de Turno', icon: <ShieldCheck size={16} /> },
+    { id: 'responsable', label: 'Responsable de Conteo', icon: <CheckCircle2 size={16} /> }
+  ];
+  const [tabActiva, setTabActiva] = useState<TabId>('general');
 
   // Usar items guardados cuando el panel está cerrado, items editables cuando está abierto
   const items = panelAbierto ? itemsEditables : itemsGuardados;
@@ -177,31 +190,68 @@ export const InformeConPanelEdicion: React.FC<InformeConPanelEdicionProps> = ({
       <div className={`transition-all duration-300 ${panelAbierto ? 'mr-[600px]' : 'mr-0'}`}>
         <div className="max-w-6xl mx-auto p-8">
           <div className="bg-white shadow-lg">
-            {/* HEADER */}
-            <div className="bg-yellow-200 p-4 text-center border-2 border-black">
-              <h1 className="text-2xl font-bold">FORMATO DE CONTROL DIARIO</h1>
+            {/* HEADER DEL INFORME */}
+            <div className="bg-slate-900 text-white p-6 border-x-2 border-t-2 border-slate-900 rounded-t-xl flex flex-col md:flex-row justify-between items-center gap-4">
+              <div className="flex items-center gap-4">
+                {/* Un toque visual: Línea vertical de acento */}
+                <div className="h-12 w-1.5 bg-amber-400 rounded-full"></div>
+                <div>
+                  <h1 className="text-2xl font-black uppercase tracking-tighter leading-none">
+                    Formato de Control Diario
+                  </h1>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.3em] mt-1">
+                    Sistema de Registro de Operaciones
+                  </p>
+                </div>
+              </div>
+
+              {/* Badge de ID o Número de Control sutil */}
+              <div className="bg-slate-800 px-4 py-2 rounded-lg border border-slate-700">
+                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">No. Registro:</span>
+                <span className="ml-2 font-mono text-amber-400 text-sm">#{new Date().getTime().toString().slice(-6)}</span>
+              </div>
             </div>
 
-            {/* INFO GENERAL */}
-            <div className="border-2 border-black border-t-0">
-              <div className="grid grid-cols-3 border-b-2 border-black">
-                <div className="p-3 border-r-2 border-black">
-                  <span className="font-bold">FECHA:</span> {primerRegistro.fecha}
+            {/* INFO GENERAL - Cuadrícula Técnica */}
+            <div className="border-x-2 border-b-2 border-slate-900">
+              <div className="grid grid-cols-3 bg-white">
+                {/* Fecha */}
+                <div className="p-4 border-r-2 border-slate-900 flex flex-col gap-1">
+                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Fecha de Operación</span>
+                  <span className="font-bold text-slate-800 font-mono">{primerRegistro.fecha}</span>
                 </div>
-                <div className="p-3 border-r-2 border-black">
-                  <span className="font-bold">UBICACIÓN:</span>{' '}
-                  {(panelAbierto ? registrosEditables : registros).map(r => r.ubicacion).join(', ')}
+
+                {/* Ubicación */}
+                <div className="p-4 border-r-2 border-slate-900 flex flex-col gap-1 col-span-1">
+                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Ubicaciones Asignadas</span>
+                  <span className="font-bold text-slate-800 truncate">
+                    {(panelAbierto ? registrosEditables : registros).map(r => r.ubicacion).join(', ')}
+                  </span>
                 </div>
-                <div className="p-3">
-                  <span className="font-bold">TIPO:</span>{' '}
-                  {primerRegistro.tipoParqueadero === 'carros' ? ' Carros' : ' Motos'}
+
+                {/* Tipo */}
+                <div className="p-4 flex flex-col gap-1">
+                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Segmento / Vehículo</span>
+                  <div className="flex items-center gap-2 text-slate-800">
+                    <span className="text-lg leading-none">
+                      {primerRegistro.tipoParqueadero === 'carros'}
+                    </span>
+                    <span className="font-black uppercase text-sm italic">
+                      {primerRegistro.tipoParqueadero}
+                    </span>
+                  </div>
                 </div>
               </div>
 
-              {/* HEADER DONACIONES */}
-              <div className="bg-yellow-200 p-3 text-center border-b-2 border-black">
-                <h2 className="text-xl font-bold">DONACIONES</h2>
+              {/* SUB-HEADER DONACIONES - Estilo Invertido */}
+              <div className="bg-slate-100 p-3 text-center border-t-2 border-slate-900 flex items-center justify-center gap-4">
+                <div className="h-[1px] w-20 bg-slate-300"></div>
+                <h2 className="text-sm font-black uppercase tracking-[0.5em] text-slate-900">
+                  Sección de Donaciones
+                </h2>
+                <div className="h-[1px] w-20 bg-slate-300"></div>
               </div>
+
 
               {/* TABLA */}
               <table className="w-full">
@@ -247,40 +297,74 @@ export const InformeConPanelEdicion: React.FC<InformeConPanelEdicionProps> = ({
                 </div>
               </div>
 
-              {/* TABLA DE FACTURAS ELECTRÓNICAS (si hay items) */}
+              {/* SECCIÓN: FACTURAS ELECTRÓNICAS */}
               {itemsFacturas.length > 0 && (
-                <>
-                  <div className="bg-purple-200 p-3 text-center border-t-2 border-b-2 border-black">
-                    <h2 className="text-xl font-bold">FACTURAS ELECTRÓNICAS</h2>
+                <div className="mt-0">
+                  {/* Header de Sección: Estilo Corporativo Azul */}
+                  <div className="bg-blue-800 p-3 text-center border-x-2 border-b-2 border-slate-900">
+                    <h2 className="text-sm font-black uppercase tracking-[0.4em] text-white">
+                      Facturación Electrónica Registrada
+                    </h2>
                   </div>
 
-                  <table className="w-full">
+                  <table className="w-full border-x-2 border-b-2 border-slate-900 border-collapse">
                     <thead>
-                      <tr className="bg-gray-100 border-b-2 border-black">
-                        <th className="border-r border-black p-2 text-sm">ITEM</th>
-                        <th className="border-r border-black p-2 text-sm">DONANTE</th>
-                        <th className="border-r border-black p-2 text-sm">DOCUMENTO</th>
-                        <th className="border-r border-black p-2 text-sm">MEDIO</th>
-                        <th className="border-r border-black p-2 text-sm">VALOR</th>
-                        <th className="border-r border-black p-2 text-sm">RECIBO N.</th>
-                        <th className="p-2 text-sm">OBSERVACIONES</th>
+                      <tr className="bg-slate-100 border-b-2 border-slate-900">
+                        <th className="border-r border-slate-900 p-2 text-[10px] font-black uppercase tracking-tighter w-12 text-slate-500">Item</th>
+                        <th className="border-r border-slate-900 p-2 text-[10px] font-black uppercase tracking-tighter text-left">Donante / Razón Social</th>
+                        <th className="border-r border-slate-900 p-2 text-[10px] font-black uppercase tracking-tighter w-28">NIT / C.C.</th>
+                        <th className="border-r border-slate-900 p-2 text-[10px] font-black uppercase tracking-tighter w-24">Medio Pago</th>
+                        <th className="border-r border-slate-900 p-2 text-[10px] font-black uppercase tracking-tighter w-28 text-right px-4">Valor Total</th>
+                        <th className="border-r border-slate-900 p-2 text-[10px] font-black uppercase tracking-tighter w-24">No. Factura</th>
+                        <th className="p-2 text-[10px] font-black uppercase tracking-tighter text-left">Observaciones</th>
                       </tr>
                     </thead>
                     <tbody>
                       {itemsFacturas.map((item, idx) => (
-                        <tr key={idx} className="border-b border-gray-300 bg-purple-50">
-                          <td className="border-r border-black p-2 text-center text-sm">{item.item}</td>
-                          <td className="border-r border-black p-2 text-sm">{item.donante}</td>
-                          <td className="border-r border-black p-2 text-center text-sm">{item.documento}</td>
-                          <td className="border-r border-black p-2 text-center text-sm">{item.medio}</td>
-                          <td className="border-r border-black p-2 text-right text-sm">${item.valor.toLocaleString()}</td>
-                          <td className="border-r border-black p-2 text-center text-sm">{item.reciboN}</td>
-                          <td className="p-2 text-sm">{item.observaciones}</td>
+                        <tr
+                          key={idx}
+                          className={`border-b border-slate-200 transition-colors ${
+                            idx % 2 === 0 ? 'bg-white' : 'bg-blue-50/30'
+                          }`}
+                        >
+                          <td className="border-r border-slate-300 p-2 text-center text-[11px] font-mono text-slate-400">
+                            {String(item.item).padStart(2, '0')}
+                          </td>
+                          <td className="border-r border-slate-300 p-2 text-[11px] font-bold text-slate-800 uppercase leading-tight">
+                            {item.donante}
+                          </td>
+                          <td className="border-r border-slate-300 p-2 text-center text-[11px] font-mono text-slate-600">
+                            {item.documento}
+                          </td>
+                          <td className="border-r border-slate-300 p-2 text-center text-[10px] font-black text-blue-700 uppercase">
+                            {item.medio}
+                          </td>
+                          <td className="border-r border-slate-300 p-2 text-right text-[11px] font-mono font-bold text-slate-900 px-4">
+                            $ {item.valor.toLocaleString()}
+                          </td>
+                          <td className="border-r border-slate-300 p-2 text-center text-[11px] font-bold text-blue-900 bg-blue-50/50 uppercase">
+                            {item.reciboN}
+                          </td>
+                          <td className="p-2 text-[10px] text-slate-500 italic leading-tight">
+                            {item.observaciones || '---'}
+                          </td>
                         </tr>
                       ))}
                     </tbody>
+                    {/* Footer de Tabla: Totalización sutil */}
+                    <tfoot>
+                      <tr className="bg-slate-900 text-white border-t-2 border-slate-900">
+                        <td colSpan={4} className="p-2 text-right text-[10px] font-black uppercase tracking-widest px-4">
+                          Total Facturado:
+                        </td>
+                        <td className="p-2 text-right text-xs font-mono font-bold px-4 border-l border-slate-700">
+                          $ {itemsFacturas.reduce((sum, item) => sum + item.valor, 0).toLocaleString()}
+                        </td>
+                        <td colSpan={2} className="bg-slate-800"></td>
+                      </tr>
+                    </tfoot>
                   </table>
-                </>
+                </div>
               )}
 
               {/* FIRMAS */}
@@ -355,32 +439,48 @@ export const InformeConPanelEdicion: React.FC<InformeConPanelEdicionProps> = ({
               </div>
             </div>
 
-            {/* BOTONES */}
-            <div className="p-6 flex gap-4 justify-center print:hidden">
+            {/* BARRA DE ACCIONES FLOTANTE */}
+            <div className="p-8 flex gap-4 justify-center print:hidden">
               {!panelAbierto && (
-                <>
+                <div className="flex gap-3 bg-white/80 backdrop-blur-md p-3 rounded-[2.5rem] border border-slate-200 shadow-2xl ring-1 ring-slate-900/5 animate-in fade-in zoom-in duration-500">
+
+                  {/* Botón: Editar (Acento Amber) */}
                   <button
                     onClick={handleAbrirPanel}
-                    className="bg-orange-600 text-white px-6 py-3 rounded-lg hover:bg-orange-700 flex items-center gap-2 font-semibold shadow-lg transform hover:scale-105 transition-all"
+                    className="group relative flex items-center gap-3 bg-amber-400 hover:bg-slate-900 text-slate-900 hover:text-white px-7 py-3.5 rounded-[1.8rem] transition-all duration-300 active:scale-95 shadow-md"
                   >
-                    <Edit size={20} />
-                    Editar Informe
+                    <Edit size={20} strokeWidth={2.5} className="group-hover:rotate-12 transition-transform" />
+                    <span className="text-[12px] font-black uppercase tracking-tighter">
+                      Editar Informe
+                    </span>
                   </button>
+
+                  {/* Botón: Nuevo (Acento Secundario Slate) */}
                   <button
                     onClick={onNuevoInforme}
-                    className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 flex items-center gap-2 shadow-lg transform hover:scale-105 transition-all"
+                    className="group flex items-center gap-3 bg-slate-100 hover:bg-slate-200 text-slate-600 px-7 py-3.5 rounded-[1.8rem] transition-all duration-300 active:scale-95"
                   >
-                    <FileText size={20} />
-                    Nuevo Informe
+                    <Plus size={20} strokeWidth={2.5} />
+                    <span className="text-[12px] font-black uppercase tracking-tighter">
+                      Nuevo
+                    </span>
                   </button>
+
+                  {/* Divisor sutil */}
+                  <div className="w-[1px] bg-slate-200 my-2 mx-1"></div>
+
+                  {/* Botón: Imprimir/Descargar (Acento Monetario Emerald) */}
                   <button
                     onClick={() => window.print()}
-                    className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 flex items-center gap-2 shadow-lg transform hover:scale-105 transition-all"
+                    className="group flex items-center gap-3 bg-emerald-600 hover:bg-emerald-500 text-white px-8 py-3.5 rounded-[1.8rem] transition-all duration-300 active:scale-95 shadow-lg shadow-emerald-900/20"
                   >
-                    <Download size={20} />
-                    Imprimir/Descargar
+                    <Printer size={20} strokeWidth={2.5} className="group-hover:-translate-y-0.5 transition-transform" />
+                    <span className="text-[12px] font-black uppercase tracking-tighter">
+                      Imprimir PDF
+                    </span>
                   </button>
-                </>
+
+                </div>
               )}
             </div>
           </div>
@@ -388,237 +488,242 @@ export const InformeConPanelEdicion: React.FC<InformeConPanelEdicionProps> = ({
       </div>
 
       {/* PANEL LATERAL DE EDICIÓN */}
-      <div 
-        className={`fixed top-0 right-0 h-full w-[600px] bg-white shadow-2xl transform transition-transform duration-300 z-50 ${
+      <div
+        className={`fixed top-0 right-0 h-full w-[600px] bg-white shadow-2xl transform transition-transform duration-300 z-50 border-l border-slate-200 ${
           panelAbierto ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
-        {/* Header del Panel */}
-        <div className="bg-gradient-to-r from-orange-600 to-red-600 text-white p-6">
-          <div className="flex items-center justify-between mb-2">
+        {/* Header del Panel - Estética Moderna */}
+        <div className="bg-slate-900 text-white p-6 m-4 rounded-2xl shadow-lg">
+          <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <Edit size={28} />
-              <h2 className="text-2xl font-bold">Editor de Informe</h2>
+              {/* Icono con trazo fino (strokeWidth: 2) */}
+              <Edit size={24} strokeWidth={2} className="text-amber-400" />
+              <div>
+                <h2 className="text-xl font-black uppercase tracking-tighter leading-none">
+                  Editor de Informe
+                </h2>
+                <p className="text-slate-400 text-[11px] font-medium mt-1 uppercase tracking-widest">
+                  Modifica los campos del informe
+                </p>
+              </div>
             </div>
+
             <button
               onClick={handleCancelar}
-              className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+              className="p-2 hover:bg-slate-800 text-slate-400 hover:text-white rounded-xl transition-all border border-slate-800"
             >
-              <X size={24} />
+              <X size={20} strokeWidth={2} />
             </button>
           </div>
-          <p className="text-orange-100 text-sm">Modifica los campos del informe</p>
         </div>
 
-        {/* Tabs */}
-        <div className="flex border-b border-gray-200 bg-gray-50">
-          <button
-            onClick={() => setTabActiva('general')}
-            className={`flex-1 py-3 px-4 font-semibold text-sm transition-colors ${
-              tabActiva === 'general' 
-                ? 'bg-white text-orange-600 border-b-2 border-orange-600' 
-                : 'text-gray-600 hover:bg-gray-100'
-            }`}
-          >
-            General
-          </button>
-          <button
-            onClick={() => setTabActiva('donaciones')}
-            className={`flex-1 py-3 px-4 font-semibold text-sm transition-colors ${
-              tabActiva === 'donaciones' 
-                ? 'bg-white text-orange-600 border-b-2 border-orange-600' 
-                : 'text-gray-600 hover:bg-gray-100'
-            }`}
-          >
-            Donaciones
-          </button>
-          <button
-            onClick={() => setTabActiva('facturas')}
-            className={`flex-1 py-3 px-4 font-semibold text-sm transition-colors ${
-              tabActiva === 'facturas' 
-                ? 'bg-white text-orange-600 border-b-2 border-orange-600' 
-                : 'text-gray-600 hover:bg-gray-100'
-            }`}
-          >
-            Facturas
-          </button>
-          <button
-            onClick={() => setTabActiva('firmas')}
-            className={`flex-1 py-3 px-4 font-semibold text-sm transition-colors ${
-              tabActiva === 'firmas' 
-                ? 'bg-white text-orange-600 border-b-2 border-orange-600' 
-                : 'text-gray-600 hover:bg-gray-100'
-            }`}
-          >
-            Firmas
-          </button>
+        {/* Tabs - Estética Moderno/App */}
+        <div className="flex gap-2 p-2 mx-4 mb-4 bg-slate-50 rounded-2xl border border-slate-200">
+          {tabs.map((id) => {
+            const label = id.charAt(0).toUpperCase() + id.slice(1);
+            return (
+              <button
+                key={id}
+                onClick={() => setTabActiva(id)}
+                className={`flex-1 py-2 px-3 text-[11px] font-black uppercase tracking-tighter transition-all duration-200 rounded-xl ${
+                  tabActiva === id
+                    ? 'bg-white text-slate-900 shadow-sm ring-1 ring-slate-200'
+                    : 'text-slate-500 hover:text-slate-700 hover:bg-slate-100'
+                }`}
+              >
+                <span className={tabActiva === id ? 'border-b-2 border-amber-400 pb-0.5' : ''}>
+                  {label}
+                </span>
+              </button>
+            );
+          })}
         </div>
 
-        {/* Contenido del Panel */}
-        <div className="overflow-y-auto h-[calc(100vh-250px)] p-6">
+        {/* Contenido del Panel - Scrollable */}
+        <div className="overflow-y-auto h-[calc(100vh-280px)] px-4 py-2 custom-scrollbar">
+
           {/* TAB: GENERAL */}
           {tabActiva === 'general' && (
-            <div className="space-y-6">
-              <div>
-                <label className="block text-sm font-semibold mb-2 text-gray-700">Fecha</label>
-                <input
-                  type="date"
-                  value={primerRegistro.fecha}
-                  onChange={(e) => handleActualizarRegistro(0, 'fecha', e.target.value)}
-                  className="w-full p-3 border-2 border-gray-300 rounded-lg focus:border-orange-500 focus:outline-none"
-                />
-              </div>
+            <div className="space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-300">
 
-              <div>
-                <label className="block text-sm font-semibold mb-2 text-gray-700">Tipo de Parqueadero</label>
-                <select
-                  value={primerRegistro.tipoParqueadero}
-                  onChange={(e) => handleActualizarRegistro(0, 'tipoParqueadero', e.target.value)}
-                  className="w-full p-3 border-2 border-gray-300 rounded-lg focus:border-orange-500 focus:outline-none bg-white"
-                >
-                  <option value="carros"> Carros</option>
-                  <option value="motos"> Motos</option>
-                </select>
-              </div>
+              {/* Grupo: Información Básica */}
+              <div className="bg-white p-4 rounded-3xl border border-slate-100 shadow-sm space-y-4">
 
-              <div>
-                <label className="block text-sm font-semibold mb-2 text-gray-700">Ubicaciones</label>
-                {registrosEditables.map((reg, idx) => (
+                {/* Campo: Fecha */}
+                <div>
+                  <label className="block text-[10px] font-black uppercase tracking-widest mb-1.5 text-slate-500 ml-1">
+                    Fecha de Control
+                  </label>
                   <input
-                    key={idx}
-                    type="text"
-                    value={reg.ubicacion}
-                    onChange={(e) => handleActualizarRegistro(idx, 'ubicacion', e.target.value)}
-                    className="w-full p-3 border-2 border-gray-300 rounded-lg focus:border-orange-500 focus:outline-none mb-2"
-                    placeholder={`Parqueadero ${idx + 1}`}
+                    type="date"
+                    value={primerRegistro.fecha}
+                    onChange={(e) => handleActualizarRegistro(0, 'fecha', e.target.value)}
+                    className="w-full p-3 bg-slate-50 border-none rounded-2xl text-sm font-semibold text-slate-900 focus:ring-2 focus:ring-amber-400 focus:bg-white transition-all outline-none"
                   />
-                ))}
+                </div>
+
+                {/* Campo: Tipo de Parqueadero */}
+                <div>
+                  <label className="block text-[10px] font-black uppercase tracking-widest mb-1.5 text-slate-500 ml-1">
+                    Tipo de Parqueadero
+                  </label>
+                  <select
+                    value={primerRegistro.tipoParqueadero}
+                    onChange={(e) => handleActualizarRegistro(0, 'tipoParqueadero', e.target.value)}
+                    className="w-full p-3 bg-slate-50 border-none rounded-2xl text-sm font-semibold text-slate-900 focus:ring-2 focus:ring-amber-400 focus:bg-white transition-all outline-none appearance-none cursor-pointer"
+                  >
+                    <option value="carros"> Carros</option>
+                    <option value="motos"> Motos</option>
+                  </select>
+                </div>
               </div>
+
+              {/* Grupo: Ubicaciones */}
+              <div className="bg-white p-4 rounded-3xl border border-slate-100 shadow-sm">
+                <label className="block text-[10px] font-black uppercase tracking-widest mb-3 text-slate-500 ml-1">
+                  Ubicaciones del Turno
+                </label>
+                <div className="space-y-2">
+                  {registrosEditables.map((reg, idx) => (
+                    <div key={idx} className="relative">
+                      <input
+                        type="text"
+                        value={reg.ubicacion}
+                        onChange={(e) => handleActualizarRegistro(idx, 'ubicacion', e.target.value)}
+                        className="w-full p-3 bg-slate-50 border-none rounded-2xl text-sm font-mono font-medium text-slate-700 focus:ring-2 focus:ring-amber-400 focus:bg-white transition-all outline-none"
+                        placeholder={`Nombre de ubicación ${idx + 1}`}
+                      />
+                      <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-300">
+                        #{idx + 1}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
             </div>
           )}
 
+
           {/* TAB: DONACIONES */}
           {tabActiva === 'donaciones' && (
-            <div className="space-y-4">
-              <div className="mb-4">
-                <div className="flex justify-between items-center mb-3">
-                  <h3 className="font-bold text-lg">Valores de Donaciones por Parqueadero</h3>
+            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+
+              {/* SECCIÓN A: RESUMEN POR UBICACIÓN */}
+              <div className="bg-white p-4 rounded-3xl border border-slate-100 shadow-sm">
+                <div className="flex justify-between items-center mb-4 px-1">
+                  <div>
+                    <h3 className="font-black uppercase tracking-tighter text-slate-900 text-sm">
+                      Donaciones por Ubicación
+                    </h3>
+                    <p className="text-[10px] text-slate-400 font-medium uppercase tracking-widest">Totales acumulados</p>
+                  </div>
                   <button
                     onClick={handleRegenerarTabla}
-                    className="text-sm bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
+                    className="text-[10px] font-black uppercase tracking-widest bg-slate-100 text-slate-600 px-4 py-2 rounded-xl hover:bg-amber-400 hover:text-white transition-all"
                   >
                     Regenerar Tabla
                   </button>
                 </div>
-                {registrosEditables.map((reg, idx) => (
-                  <div key={idx} className="bg-gray-50 p-4 rounded-lg mb-3 border border-gray-200">
-                    <p className="font-semibold mb-3 text-gray-700">{reg.ubicacion}</p>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-xs font-medium mb-1">Valor Total ($)</label>
-                        <input
-                          type="number"
-                          value={reg.donaciones.valor}
-                          onChange={(e) => handleActualizarRegistro(idx, 'valorDonacion', e.target.value)}
-                          className="w-full p-2 border border-gray-300 rounded focus:border-orange-500 focus:outline-none"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-medium mb-1">Donantes</label>
-                        <input
-                          type="number"
-                          value={reg.donaciones.cantidadDonantes}
-                          onChange={(e) => handleActualizarRegistro(idx, 'cantidadDonantes', e.target.value)}
-                          className="w-full p-2 border border-gray-300 rounded focus:border-orange-500 focus:outline-none"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
 
-              <div className="border-t-2 border-gray-200 pt-4">
-                <div className="flex justify-between items-center mb-3">
-                  <h3 className="font-bold text-lg">Editar Registros Individuales</h3>
-                  <button
-                    onClick={handleAgregarItem}
-                    className="text-sm bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 flex items-center gap-1"
-                  >
-                    <Plus size={16} />
-                    Agregar
-                  </button>
-                </div>
-                <div className="space-y-3 max-h-96 overflow-y-auto">
-                  {itemsEditables.map((item, idx) => (
-                    <div key={idx} className="bg-white border-2 border-gray-200 rounded-lg p-4 hover:border-orange-300 transition-colors">
-                      <div className="flex justify-between items-start mb-3">
-                        <span className="font-bold text-orange-600">Item #{item.item}</span>
-                        <button
-                          onClick={() => handleEliminarItem(idx)}
-                          className="text-red-600 hover:text-red-800 p-1"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-                      
-                      <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-3">
+                  {registrosEditables.map((reg, idx) => (
+                    <div key={idx} className="bg-slate-50 p-4 rounded-2xl border border-transparent hover:border-slate-200 transition-all">
+                      <p className="text-[11px] font-black uppercase tracking-widest text-slate-500 mb-3 ml-1">
+                        📍 {reg.ubicacion}
+                      </p>
+                      <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <label className="block text-xs font-medium mb-1">Donante</label>
-                          <input
-                            type="text"
-                            value={item.donante}
-                            onChange={(e) => handleActualizarItem(idx, 'donante', e.target.value)}
-                            className="w-full p-2 border border-gray-300 rounded text-sm focus:border-orange-500 focus:outline-none"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-medium mb-1">Documento</label>
-                          <input
-                            type="text"
-                            value={item.documento}
-                            onChange={(e) => handleActualizarItem(idx, 'documento', e.target.value)}
-                            className="w-full p-2 border border-gray-300 rounded text-sm focus:border-orange-500 focus:outline-none"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-medium mb-1">Medio</label>
-                          <input
-                            type="text"
-                            value={item.medio}
-                            onChange={(e) => handleActualizarItem(idx, 'medio', e.target.value)}
-                            className="w-full p-2 border border-gray-300 rounded text-sm focus:border-orange-500 focus:outline-none"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-medium mb-1">Valor ($)</label>
+                          <label className="block text-[10px] font-bold text-slate-400 mb-1 ml-1 uppercase">Valor Total ($)</label>
                           <input
                             type="number"
-                            value={item.valor}
-                            onChange={(e) => handleActualizarItem(idx, 'valor', Number(e.target.value))}
-                            className="w-full p-2 border border-gray-300 rounded text-sm focus:border-orange-500 focus:outline-none"
+                            value={reg.donaciones.valor}
+                            onChange={(e) => handleActualizarRegistro(idx, 'valorDonacion', e.target.value)}
+                            className="w-full p-2.5 bg-white border-none rounded-xl text-sm font-mono font-bold text-emerald-600 focus:ring-2 focus:ring-amber-400 outline-none"
                           />
                         </div>
                         <div>
-                          <label className="block text-xs font-medium mb-1">Recibo N.</label>
+                          <label className="block text-[10px] font-bold text-slate-400 mb-1 ml-1 uppercase">Donantes</label>
                           <input
-                            type="text"
-                            value={item.reciboN}
-                            onChange={(e) => handleActualizarItem(idx, 'reciboN', e.target.value)}
-                            className="w-full p-2 border border-gray-300 rounded text-sm focus:border-orange-500 focus:outline-none"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-medium mb-1">Observaciones</label>
-                          <input
-                            type="text"
-                            value={item.observaciones}
-                            onChange={(e) => handleActualizarItem(idx, 'observaciones', e.target.value)}
-                            className="w-full p-2 border border-gray-300 rounded text-sm focus:border-orange-500 focus:outline-none"
+                            type="number"
+                            value={reg.donaciones.cantidadDonantes}
+                            onChange={(e) => handleActualizarRegistro(idx, 'cantidadDonantes', e.target.value)}
+                            className="w-full p-2.5 bg-white border-none rounded-xl text-sm font-mono font-bold text-slate-700 focus:ring-2 focus:ring-amber-400 outline-none"
                           />
                         </div>
                       </div>
                     </div>
                   ))}
+                </div>
+              </div>
+
+              {/* SECCIÓN B: REGISTROS INDIVIDUALES */}
+              <div className="bg-slate-900 p-5 rounded-3xl shadow-xl">
+                <div className="flex justify-between items-center mb-4">
+                  <div>
+                    <h3 className="font-black uppercase tracking-tighter text-white text-sm">
+                      Registros Individuales
+                    </h3>
+                    <p className="text-[10px] text-slate-400 font-medium uppercase tracking-widest">Detalle de donantes</p>
+                  </div>
+                  <button
+                    onClick={handleAgregarItem}
+                    className="bg-emerald-600 hover:bg-emerald-500 text-white p-2 rounded-xl transition-all flex items-center gap-2 px-4"
+                  >
+                    <Plus size={18} strokeWidth={3} />
+                    <span className="text-[10px] font-black uppercase tracking-widest">Agregar</span>
+                  </button>
+                </div>
+
+                <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                  {itemsEditables.map((item, idx) => {
+                    const fields = [
+                      { label: 'Donante', val: item.donante, key: 'donante', type: 'text' },
+                      { label: 'Documento', val: item.documento, key: 'documento', type: 'text' },
+                      { label: 'Medio', val: item.medio, key: 'medio', type: 'text' },
+                      { label: 'Valor ($)', val: item.valor, key: 'valor', type: 'number', color: 'text-emerald-400' },
+                      { label: 'Recibo N.', val: item.reciboN, key: 'reciboN', type: 'text' },
+                      { label: 'Observaciones', val: item.observaciones, key: 'observaciones', type: 'text', full: true }
+                    ] satisfies Array<{
+                      label: string;
+                      val: string | number;
+                      key: keyof ItemTabla;
+                      type: 'text' | 'number';
+                      color?: string;
+                      full?: boolean;
+                    }>;
+
+                    return (
+                      <div key={idx} className="bg-white/5 border border-white/10 rounded-2xl p-4 hover:bg-white/10 transition-all relative group">
+                        <div className="flex justify-between items-center mb-4">
+                          <span className="text-[10px] font-black bg-amber-400 text-slate-900 px-2 py-0.5 rounded-md uppercase">
+                            Item #{item.item}
+                          </span>
+                          <button
+                            onClick={() => handleEliminarItem(idx)}
+                            className="text-slate-500 hover:text-red-400 transition-colors"
+                          >
+                            <Trash2 size={16} strokeWidth={2} />
+                          </button>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+                          {fields.map((field) => (
+                            <div key={field.key} className={field.full ? 'col-span-2' : ''}>
+                              <label className="block text-[9px] font-bold text-slate-500 mb-1 uppercase tracking-tighter">{field.label}</label>
+                              <input
+                                type={field.type}
+                                value={field.val}
+                                onChange={(e) => handleActualizarItem(idx, field.key, field.type === 'number' ? Number(e.target.value) : e.target.value)}
+                                className={`w-full p-2 bg-slate-900/50 border border-white/10 rounded-xl text-[12px] font-semibold text-white focus:ring-1 focus:ring-amber-400 outline-none transition-all ${field.color || ''}`}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </div>
@@ -626,171 +731,180 @@ export const InformeConPanelEdicion: React.FC<InformeConPanelEdicionProps> = ({
 
           {/* TAB: FACTURAS */}
           {tabActiva === 'facturas' && (
-            <div className="space-y-4">
-              <div className="flex justify-between items-center mb-3">
-                <h3 className="font-bold text-lg">Facturas Electrónicas ({itemsFacturasEditables.length})</h3>
+            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+
+              {/* Header de Sección */}
+              <div className="flex justify-between items-center px-1">
+                <div>
+                  <h3 className="font-black uppercase tracking-tighter text-slate-900 text-sm">
+                    Facturas Electrónicas
+                  </h3>
+                  <p className="text-[10px] text-blue-800 font-bold uppercase tracking-widest">
+                    {itemsFacturasEditables.length} Documentos registrados
+                  </p>
+                </div>
                 <button
                   onClick={handleAgregarItemFactura}
-                  className="text-sm bg-purple-600 text-white px-3 py-1 rounded hover:bg-purple-700 flex items-center gap-1"
+                  className="bg-blue-800 hover:bg-blue-700 text-white p-2 rounded-xl transition-all flex items-center gap-2 px-4 shadow-md"
                 >
-                  <Plus size={16} />
-                  Agregar
+                  <Plus size={18} strokeWidth={3} />
+                  <span className="text-[10px] font-black uppercase tracking-widest">Agregar</span>
                 </button>
               </div>
 
               {itemsFacturasEditables.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  <p>No hay facturas electrónicas registradas</p>
-                  <p className="text-sm mt-2">Habilita la sección en el formulario para agregar facturas</p>
+                <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-3xl py-12 text-center">
+                  <div className="bg-slate-200 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <FileText size={24} className="text-slate-400" />
+                  </div>
+                  <p className="text-slate-500 font-bold text-sm uppercase tracking-tighter">No hay registros</p>
+                  <p className="text-[10px] text-slate-400 font-medium px-8 mt-1">
+                    Las facturas agregadas aquí aparecerán automáticamente en la sección oficial del informe.
+                  </p>
                 </div>
               ) : (
-                <div className="space-y-3 max-h-96 overflow-y-auto">
-                  {itemsFacturasEditables.map((item, idx) => (
-                    <div key={idx} className="bg-white border-2 border-purple-200 rounded-lg p-4 hover:border-purple-400 transition-colors">
-                      <div className="flex justify-between items-start mb-3">
-                        <span className="font-bold text-purple-600">Factura #{item.item}</span>
-                        <button
-                          onClick={() => handleEliminarItemFactura(idx)}
-                          className="text-red-600 hover:text-red-800 p-1"
-                        >
-                          <Trash2 size={16} />
-                        </button>
+                <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
+                  {itemsFacturasEditables.map((item, idx) => {
+                    const fields = [
+                      { label: 'Donante / Razón Social', val: item.donante, key: 'donante', type: 'text' },
+                      { label: 'NIT / Documento', val: item.documento, key: 'documento', type: 'text' },
+                      { label: 'Medio de Pago', val: item.medio, key: 'medio', type: 'text' },
+                      { label: 'Valor ($)', val: item.valor, key: 'valor', type: 'number', color: 'text-blue-800 font-black' },
+                      { label: 'Número de Factura', val: item.reciboN, key: 'reciboN', type: 'text' },
+                      { label: 'Observaciones Adicionales', val: item.observaciones, key: 'observaciones', type: 'text', full: true }
+                    ] satisfies Array<{
+                      label: string;
+                      val: string | number;
+                      key: keyof ItemFactura;
+                      type: 'text' | 'number';
+                      color?: string;
+                      full?: boolean;
+                    }>;
+
+                    return (
+                      <div
+                        key={idx}
+                        className="bg-white border border-slate-100 rounded-3xl p-5 shadow-sm hover:shadow-md hover:border-blue-200 transition-all group"
+                      >
+                        <div className="flex justify-between items-center mb-4">
+                          <div className="flex items-center gap-2">
+                            <span className="bg-blue-800 text-white text-[10px] font-black px-3 py-1 rounded-lg uppercase tracking-widest">
+                              Factura #{item.item}
+                            </span>
+                            <div className="h-1 w-1 bg-slate-300 rounded-full"></div>
+                            <span className="text-[10px] font-mono text-slate-400 font-bold">Ref: {item.reciboN || '---'}</span>
+                          </div>
+                          <button
+                            onClick={() => handleEliminarItemFactura(idx)}
+                            className="text-slate-300 hover:text-red-500 transition-colors p-1"
+                          >
+                            <Trash2 size={18} strokeWidth={2} />
+                          </button>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+                          {fields.map((field) => (
+                            <div key={field.key} className={field.full ? 'col-span-2' : ''}>
+                              <label className="block text-[9px] font-black text-slate-400 mb-1 ml-1 uppercase tracking-tighter">
+                                {field.label}
+                              </label>
+                              <input
+                                type={field.type}
+                                value={field.val}
+                                onChange={(e) => handleActualizarItemFactura(idx, field.key, field.type === 'number' ? Number(e.target.value) : e.target.value)}
+                                className={`w-full p-3 bg-slate-50 border-none rounded-2xl text-[12px] font-semibold text-slate-700 focus:ring-2 focus:ring-blue-800/20 focus:bg-white outline-none transition-all ${field.color || ''}`}
+                                placeholder="..."
+                              />
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                      
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <label className="block text-xs font-medium mb-1">Donante</label>
-                          <input
-                            type="text"
-                            value={item.donante}
-                            onChange={(e) => handleActualizarItemFactura(idx, 'donante', e.target.value)}
-                            className="w-full p-2 border border-gray-300 rounded text-sm focus:border-purple-500 focus:outline-none"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-medium mb-1">Documento</label>
-                          <input
-                            type="text"
-                            value={item.documento}
-                            onChange={(e) => handleActualizarItemFactura(idx, 'documento', e.target.value)}
-                            className="w-full p-2 border border-gray-300 rounded text-sm focus:border-purple-500 focus:outline-none"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-medium mb-1">Medio</label>
-                          <input
-                            type="text"
-                            value={item.medio}
-                            onChange={(e) => handleActualizarItemFactura(idx, 'medio', e.target.value)}
-                            className="w-full p-2 border border-gray-300 rounded text-sm focus:border-purple-500 focus:outline-none"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-medium mb-1">Valor ($)</label>
-                          <input
-                            type="number"
-                            value={item.valor}
-                            onChange={(e) => handleActualizarItemFactura(idx, 'valor', Number(e.target.value))}
-                            className="w-full p-2 border border-gray-300 rounded text-sm focus:border-purple-500 focus:outline-none"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-medium mb-1">Recibo N.</label>
-                          <input
-                            type="text"
-                            value={item.reciboN}
-                            onChange={(e) => handleActualizarItemFactura(idx, 'reciboN', e.target.value)}
-                            className="w-full p-2 border border-gray-300 rounded text-sm focus:border-purple-500 focus:outline-none"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-medium mb-1">Observaciones</label>
-                          <input
-                            type="text"
-                            value={item.observaciones}
-                            onChange={(e) => handleActualizarItemFactura(idx, 'observaciones', e.target.value)}
-                            className="w-full p-2 border border-gray-300 rounded text-sm focus:border-purple-500 focus:outline-none"
-                          />
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+          {/* TAB: FIRMAS */}
+          {tabActiva === 'firmas' && (
+            <div className="space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-300">
+
+              <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm">
+                <h3 className="font-black uppercase tracking-tighter text-slate-900 text-sm mb-5 px-1">
+                  Validación del Informe
+                </h3>
+
+                <div className="space-y-6">
+                  {roles.map((rol) => (
+                    <div key={rol.id} className="relative group">
+                      <label className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest mb-2 text-slate-400 ml-1 group-focus-within:text-amber-500 transition-colors">
+                        {rol.icon}
+                        {rol.label}
+                      </label>
+
+                      <div className="relative">
+                        <select
+                          value={primerRegistro.firmas[rol.id]?.nombre || ''}
+                          onChange={(e) => handleCambiarFirma(rol.id, e.target.value)}
+                          className="w-full p-4 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-700 focus:ring-2 focus:ring-amber-400 focus:bg-white transition-all outline-none appearance-none cursor-pointer"
+                        >
+                          <option value="">Seleccionar personal...</option>
+                          {firmas[rol.id].map((firma) => (
+                            <option key={firma.nombre} value={firma.nombre}>
+                              {firma.nombre}
+                            </option>
+                          ))}
+                        </select>
+
+                        {/* Icono de flecha personalizado */}
+                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-300">
+                          <ChevronDown size={18} strokeWidth={3} />
                         </div>
                       </div>
                     </div>
                   ))}
                 </div>
-              )}
-            </div>
-          )}
-
-          {/* TAB: FIRMAS */}
-          {tabActiva === 'firmas' && (
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-semibold mb-2">Trabajador</label>
-                <select
-                  value={primerRegistro.firmas.trabajador?.nombre || ''}
-                  onChange={(e) => handleCambiarFirma('trabajador', e.target.value)}
-                  className="w-full p-3 border-2 border-gray-300 rounded-lg focus:border-orange-500 focus:outline-none"
-                >
-                  <option value="">Seleccionar...</option>
-                  {firmas?.trabajador?.map(f => (
-                    <option key={f.nombre} value={f.nombre}>{f.nombre}</option>
-                  ))}
-                </select>
               </div>
 
-              <div>
-                <label className="block text-sm font-semibold mb-2">Supervisor</label>
-                <select
-                  value={primerRegistro.firmas.supervisor?.nombre || ''}
-                  onChange={(e) => handleCambiarFirma('supervisor', e.target.value)}
-                  className="w-full p-3 border-2 border-gray-300 rounded-lg focus:border-orange-500 focus:outline-none"
-                >
-                  <option value="">Seleccionar...</option>
-                  {firmas?.supervisor?.map(f => (
-                    <option key={f.nombre} value={f.nombre}>{f.nombre}</option>
-                  ))}
-                </select>
+              {/* Nota informativa técnica */}
+              <div className="mx-2 p-4 bg-slate-900 rounded-2xl border border-slate-800 shadow-inner">
+                <div className="flex gap-3 items-start text-slate-400">
+                  <Info size={16} className="shrink-0 mt-0.5 text-amber-400" />
+                  <p className="text-[10px] font-medium leading-relaxed uppercase tracking-tight">
+                    La selección de personal en esta sección adjunta automáticamente la <span className="text-white font-bold">firma digital</span> y el sello correspondiente en el documento final generado.
+                  </p>
+                </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-semibold mb-2">Responsable de Conteo</label>
-                <select
-                  value={primerRegistro.firmas.responsable?.nombre || ''}
-                  onChange={(e) => handleCambiarFirma('responsable', e.target.value)}
-                  className="w-full p-3 border-2 border-gray-300 rounded-lg focus:border-orange-500 focus:outline-none"
-                >
-                  <option value="">Seleccionar...</option>
-                  {firmas?.responsable?.map(f => (
-                    <option key={f.nombre} value={f.nombre}>{f.nombre}</option>
-                  ))}
-                </select>
-              </div>
             </div>
           )}
         </div>
-
-        {/* Footer con Botones */}
-        <div className="absolute bottom-0 left-0 right-0 bg-white border-t-2 border-gray-200 p-6 flex gap-3">
-          <button
-            onClick={handleGuardarCambios}
-            className="flex-1 bg-green-600 text-white py-3 px-6 rounded-lg hover:bg-green-700 font-semibold flex items-center justify-center gap-2 shadow-lg"
-          >
-            <Save size={20} />
-            Guardar Cambios
-          </button>
-          <button
-            onClick={handleCancelar}
-            className="flex-1 bg-gray-600 text-white py-3 px-6 rounded-lg hover:bg-gray-700 font-semibold flex items-center justify-center gap-2"
-          >
-            <X size={20} />
-            Cancelar
-          </button>
+        {/* Footer con Botones - Estilo Cápsula Moderna */}
+        <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-white via-white/90 to-transparent">
+          <div className="flex gap-3 bg-slate-900 p-2 rounded-[2rem] shadow-2xl border border-slate-800">
+            <button
+              onClick={handleGuardarCambios}
+              className="flex-[2.5] bg-emerald-600 hover:bg-emerald-500 text-white py-4 px-6 rounded-[1.5rem] font-black uppercase tracking-tighter text-sm flex items-center justify-center gap-3 transition-all active:scale-95 shadow-lg shadow-emerald-900/20"
+            >
+              <Save size={20} strokeWidth={2.5} />
+              Guardar Cambios
+            </button>
+            
+            <button
+              onClick={handleCancelar}
+              className="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-400 py-4 px-6 rounded-[1.5rem] font-black uppercase tracking-tighter text-[11px] flex items-center justify-center gap-2 transition-all active:scale-95"
+            >
+              <X size={18} strokeWidth={2.5} />
+              Cerrar
+            </button>
+          </div>
         </div>
-      </div>
+      </div> {/* Cierre del Panel Lateral */}
 
-      {/* Overlay */}
+      {/* Overlay - Efecto Glassmorphism */}
       {panelAbierto && (
-        <div 
-          className="fixed inset-0 bg-black/30 z-40"
+        <div
+          className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-40 transition-all duration-500"
           onClick={handleCancelar}
         />
       )}
