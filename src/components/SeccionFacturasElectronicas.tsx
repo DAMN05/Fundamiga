@@ -83,166 +83,140 @@ export const SeccionFacturasElectronicas: React.FC<SeccionFacturasElectronicasPr
   };
 
   return (
-    <div className="relative">
-      {/* Switch en la esquina superior derecha */}
-      <div className="absolute top-4 right-4 z-10">
-        <label className="flex items-center gap-2 cursor-pointer">
-          <span className="text-sm font-semibold text-gray-700">
-            {habilitado ? 'Habilitado' : 'Deshabilitado'}
-          </span>
-          <div className="relative">
-            <input
-              type="checkbox"
-              checked={habilitado}
-              onChange={handleToggle}
-              className="sr-only peer"
-            />
-            <div className="w-11 h-6 bg-gray-300 rounded-full peer peer-checked:bg-purple-600 peer-focus:ring-2 peer-focus:ring-purple-300 transition-colors"></div>
-            <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-5"></div>
-          </div>
+    <div className="relative bg-white p-6 rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+  {/* Barra lateral decorativa Emerald que cambia a Gris si está deshabilitado */}
+  <div className={`absolute left-0 top-0 bottom-0 w-1.5 transition-colors duration-300 ${habilitado ? 'bg-emerald-500' : 'bg-gray-300'}`}></div>
+
+  {/* Switch mejorado en la esquina */}
+  <div className="absolute top-6 right-6 z-10">
+    <label className="flex items-center gap-3 cursor-pointer group">
+      <span className={`text-xs font-bold uppercase tracking-widest transition-colors ${habilitado ? 'text-emerald-600' : 'text-gray-400'}`}>
+        {habilitado ? 'Habilitado' : 'Deshabilitado'}
+      </span>
+      <div className="relative">
+        <input
+          type="checkbox"
+          checked={habilitado}
+          onChange={handleToggle}
+          className="sr-only peer"
+        />
+        <div className="w-12 h-6 bg-gray-200 rounded-full peer peer-checked:bg-emerald-500 transition-all duration-300 shadow-inner"></div>
+        <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform duration-300 shadow-md peer-checked:translate-x-6"></div>
+      </div>
+    </label>
+  </div>
+
+  {/* Contenedor principal */}
+  <div className={`transition-all duration-300 ${habilitado ? 'opacity-100' : 'opacity-40 grayscale-[0.5]'}`}>
+    <h3 className="font-bold text-lg mb-6 text-gray-800 flex items-center gap-2">
+      <span className={`p-1.5 rounded-md transition-colors ${habilitado ? 'bg-emerald-50 text-emerald-600' : 'bg-gray-100 text-gray-400'}`}>
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+      </span>
+      Facturación Electrónica
+    </h3>
+    
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+      <div className="group">
+        <label className="block text-xs font-bold uppercase tracking-wider mb-2 text-gray-500 group-focus-within:text-emerald-600">
+          Valor Total Facturas ($)
         </label>
+        <div className="relative">
+          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold">$</span>
+          <input
+            type="number"
+            value={facturaElectronica.valor || ''}
+            onChange={(e) => onFacturaChange('valor', Number(e.target.value))}
+            disabled={!habilitado}
+            placeholder="0.00"
+            className="w-full pl-8 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-700 font-medium focus:bg-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-50 transition-all outline-none disabled:cursor-not-allowed"
+          />
+        </div>
       </div>
 
-      {/* Contenedor principal */}
-      <div className={`transition-opacity ${habilitado ? 'opacity-100' : 'opacity-50'}`}>
-        <label className="block text-sm font-semibold mb-2 text-gray-700">
-          Valor Adicional - Facturas Electrónicas
+      <div className="group">
+        <label className="block text-xs font-bold uppercase tracking-wider mb-2 text-gray-500 group-focus-within:text-emerald-600">
+          Cantidad de Personas
         </label>
+        <input
+          type="number"
+          value={facturaElectronica.cantidadPersonas || ''}
+          onChange={(e) => onFacturaChange('cantidadPersonas', Number(e.target.value))}
+          disabled={!habilitado}
+          placeholder="0"
+          className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-700 font-medium focus:bg-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-50 transition-all outline-none disabled:cursor-not-allowed"
+        />
+      </div>
+    </div>
 
-        {/* Campos de entrada */}
-        <div className="bg-purple-50 p-6 rounded-lg border-2 border-purple-200">
-          <h3 className="font-bold text-lg mb-4 text-purple-900">Información de Facturas Electrónicas</h3>
-          
-          <div className="grid grid-cols-2 gap-4 mb-4">
-            <div>
-              <label className="block text-sm font-semibold mb-2 text-gray-700">
-                Valor Total de Facturas ($)
-              </label>
-              <input
-                type="number"
-                value={facturaElectronica.valor || ''}
-                onChange={(e) => onFacturaChange('valor', Number(e.target.value))}
-                disabled={!habilitado}
-                className="w-full p-3 border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
-              />
-            </div>
+    {habilitado && facturaElectronica.valor > 0 && facturaElectronica.cantidadPersonas > 0 && (
+      <button
+        onClick={generarItemsAutomatico}
+        className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 px-4 rounded-xl font-bold shadow-md shadow-emerald-100 transition-all active:scale-[0.98] mb-6 flex justify-center items-center gap-2"
+      >
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+        Generar {facturaElectronica.cantidadPersonas} Registros Automáticos
+      </button>
+    )}
 
-            <div>
-              <label className="block text-sm font-semibold mb-2 text-gray-700">
-                Cantidad de Personas
-              </label>
-              <input
-                type="number"
-                value={facturaElectronica.cantidadPersonas || ''}
-                onChange={(e) => onFacturaChange('cantidadPersonas', Number(e.target.value))}
-                disabled={!habilitado}
-                className="w-full p-3 border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
-              />
-            </div>
-          </div>
+    {/* Lista de items editables */}
+    {habilitado && itemsFacturas.length > 0 && (
+      <div className="border-t border-gray-100 pt-6">
+        <div className="flex justify-between items-center mb-4">
+          <h4 className="font-bold text-gray-800 flex items-center gap-2">
+            Registros Detallados 
+            <span className="bg-gray-100 text-gray-600 text-[10px] px-2 py-0.5 rounded-full">{itemsFacturas.length}</span>
+          </h4>
+          <button
+            onClick={handleAgregarItem}
+            className="text-xs bg-white border border-emerald-200 text-emerald-600 px-3 py-1.5 rounded-lg hover:bg-emerald-50 font-bold transition-colors"
+          >
+            + Agregar Item
+          </button>
+        </div>
 
-          {habilitado && facturaElectronica.valor > 0 && facturaElectronica.cantidadPersonas > 0 && (
-            <>
-              
-
-              <button
-                onClick={generarItemsAutomatico}
-                className="w-full bg-purple-600 text-white py-2 px-4 rounded-lg hover:bg-purple-700 font-semibold mb-4"
-              >
-                Generar {facturaElectronica.cantidadPersonas} Registros
-              </button>
-            </>
-          )}
-
-          {/* Lista de items editables */}
-          {habilitado && itemsFacturas.length > 0 && (
-            <div className="border-t-2 border-purple-200 pt-4 mt-4">
+        <div className="space-y-3 max-h-96 overflow-y-auto pr-2 custom-scrollbar">
+          {itemsFacturas.map((item, idx) => (
+            <div key={idx} className="group/item bg-gray-50 hover:bg-white border border-gray-200 hover:border-emerald-200 rounded-xl p-4 transition-all hover:shadow-sm">
               <div className="flex justify-between items-center mb-3">
-                <h4 className="font-bold text-gray-800">Registros de Facturas ({itemsFacturas.length})</h4>
+                <span className="text-[10px] font-black uppercase tracking-widest text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">
+                  Item #{item.item}
+                </span>
                 <button
-                  onClick={handleAgregarItem}
-                  className="text-sm bg-purple-600 text-white px-3 py-1 rounded hover:bg-purple-700"
+                  onClick={() => handleEliminarItem(idx)}
+                  className="text-gray-400 hover:text-red-500 p-1.5 hover:bg-red-50 rounded-lg transition-all"
                 >
-                  + Agregar
+                  <Trash2 size={16} />
                 </button>
               </div>
-
-              <div className="space-y-3 max-h-80 overflow-y-auto">
-                {itemsFacturas.map((item, idx) => (
-                  <div key={idx} className="bg-white border-2 border-purple-200 rounded-lg p-4">
-                    <div className="flex justify-between items-start mb-3">
-                      <span className="font-bold text-purple-600">Item #{item.item}</span>
-                      <button
-                        onClick={() => handleEliminarItem(idx)}
-                        className="text-red-600 hover:text-red-800 p-1"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-xs font-medium mb-1">Donante</label>
-                        <input
-                          type="text"
-                          value={item.donante}
-                          onChange={(e) => handleActualizarItem(idx, 'donante', e.target.value)}
-                          className="w-full p-2 border border-gray-300 rounded text-sm focus:border-purple-500 focus:outline-none"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-medium mb-1">Documento</label>
-                        <input
-                          type="text"
-                          value={item.documento}
-                          onChange={(e) => handleActualizarItem(idx, 'documento', e.target.value)}
-                          className="w-full p-2 border border-gray-300 rounded text-sm focus:border-purple-500 focus:outline-none"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-medium mb-1">Medio</label>
-                        <input
-                          type="text"
-                          value={item.medio}
-                          onChange={(e) => handleActualizarItem(idx, 'medio', e.target.value)}
-                          className="w-full p-2 border border-gray-300 rounded text-sm focus:border-purple-500 focus:outline-none"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-medium mb-1">Valor ($)</label>
-                        <input
-                          type="number"
-                          value={item.valor}
-                          onChange={(e) => handleActualizarItem(idx, 'valor', Number(e.target.value))}
-                          className="w-full p-2 border border-gray-300 rounded text-sm focus:border-purple-500 focus:outline-none"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-medium mb-1">Recibo N.</label>
-                        <input
-                          type="text"
-                          value={item.reciboN}
-                          onChange={(e) => handleActualizarItem(idx, 'reciboN', e.target.value)}
-                          className="w-full p-2 border border-gray-300 rounded text-sm focus:border-purple-500 focus:outline-none"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-medium mb-1">Observaciones</label>
-                        <input
-                          type="text"
-                          value={item.observaciones}
-                          onChange={(e) => handleActualizarItem(idx, 'observaciones', e.target.value)}
-                          className="w-full p-2 border border-gray-300 rounded text-sm focus:border-purple-500 focus:outline-none"
-                        />
-                      </div>
-                    </div>
+              
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {[
+                  { label: 'Donante', key: 'donante', type: 'text' },
+                  { label: 'Documento', key: 'documento', type: 'text' },
+                  { label: 'Medio', key: 'medio', type: 'text' },
+                  { label: 'Valor ($)', key: 'valor', type: 'number' },
+                  { label: 'Recibo N.', key: 'reciboN', type: 'text' },
+                  { label: 'Observaciones', key: 'observaciones', type: 'text' }
+                ].map((field) => (
+                  <div key={field.key}>
+                    <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1 ml-1">{field.label}</label>
+                    <input
+                      type={field.type}
+                      value={item[field.key as keyof typeof item]}
+                      onChange={(e) => handleActualizarItem(idx, field.key as keyof typeof item, field.type === 'number' ? Number(e.target.value) : e.target.value)}
+                      className="w-full p-2 bg-white border border-gray-200 rounded-lg text-xs focus:border-emerald-500 focus:outline-none transition-colors"
+                    />
                   </div>
                 ))}
               </div>
             </div>
-          )}
+          ))}
         </div>
       </div>
-    </div>
+    )}
+  </div>
+</div>
   );
 };
