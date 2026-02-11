@@ -1,13 +1,97 @@
 import { RegistroDiario, ItemTabla } from '../types';
 
+// Valores base permitidos para motos
+const VALORES_MOTOS = [
+  300, 300, 350, 400, 450, 500, 500, 500, 550, 600, 650, 700, 750, 800, 900, 950,
+  1000, 1000, 1000,
+  1500, 2000,
+  2500, 3000,
+  4000, 5000
+];
+
+// Valores base permitidos para carros
+const VALORES_CARROS = [
+  500, 700, 1000, 1000, 1000, 1250, 1500,
+  2000, 2000, 2000, 2000, 2000, 2000, 2500,
+  3000, 3000,
+  4000, 4000,
+  5000
+];
+
+const MIN_MOTOS = 300;
+const MIN_CARROS = 500;
+const MAX = 5000;
+
+type TipoParqueadero = 'motos' | 'carros';
+
+export const generarDonaciones = (
+  total: number,
+  cantidad: number,
+  tipo: TipoParqueadero
+): number[] => {
+  const MIN = tipo === 'motos' ? MIN_MOTOS : MIN_CARROS;
+  const valoresBase = tipo === 'motos' ? VALORES_MOTOS : VALORES_CARROS;
+
+  // Validaciones
+  if (total < cantidad * MIN || total > cantidad * MAX) {
+    throw new Error('El total no cuadra con la cantidad de donaciones');
+  }
+
+  if (total % 50 !== 0) {
+    throw new Error('El total debe ser múltiplo de 50');
+  }
+
+  // Inicializar todas las donaciones con el valor mínimo
+  const donaciones: number[] = new Array(cantidad).fill(MIN);
+  let restante = total - (cantidad * MIN);
+
+  let i = 0;
+  while (restante > 0) {
+    const maxExtra = MAX - donaciones[i];
+
+    // Calcular valores posibles
+    const posibles = valoresBase
+      .filter(v => v > MIN)
+      .map(v => v - MIN)
+      .filter(extra => extra <= maxExtra && extra <= restante);
+
+    let extra: number;
+    if (posibles.length > 0) {
+      // Seleccionar un valor aleatorio de los posibles
+      extra = posibles[Math.floor(Math.random() * posibles.length)];
+    } else {
+      // Si no hay valores posibles, usar el mínimo entre maxExtra y restante
+      extra = Math.min(maxExtra, restante);
+    }
+
+    donaciones[i] += extra;
+    restante -= extra;
+    i = (i + 1) % cantidad;
+  }
+
+  // Mezclar aleatoriamente las donaciones
+  return shuffleArray(donaciones);
+};
+
+// Función auxiliar para mezclar array (Fisher-Yates shuffle)
+const shuffleArray = <T>(array: T[]): T[] => {
+  const result = [...array];
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  return result;
+};
+
 export const generarItemsTabla = (registros: RegistroDiario[]): ItemTabla[] => {
   const items: ItemTabla[] = [];
   let itemCounter = 1;
 
   registros.forEach(registro => {
-    const valores = generarValoresDonantes(
+    const valores = generarDonaciones(
       registro.donaciones.valor,
-      registro.donaciones.cantidadDonantes
+      registro.donaciones.cantidadDonantes,
+      registro.tipoParqueadero // Usa el tipo del registro
     );
     
     for (let i = 0; i < registro.donaciones.cantidadDonantes; i++) {
@@ -41,7 +125,10 @@ export const calcularValorPorDonante = (valorTotal: number, cantidadDonantes: nu
   return Math.round(valorTotal / cantidadDonantes);
 };
 
+// Mantener la función anterior por compatibilidad (deprecada)
 export const generarValoresDonantes = (valorTotal: number, cantidadDonantes: number): number[] => {
+  console.warn('generarValoresDonantes está deprecada, usar generarDonaciones en su lugar');
+  
   if (cantidadDonantes === 0) return [];
   if (cantidadDonantes === 1) return [valorTotal];
 
@@ -49,24 +136,20 @@ export const generarValoresDonantes = (valorTotal: number, cantidadDonantes: num
   const valorBase = Math.floor(valorTotal / cantidadDonantes);
   let sumaAcumulada = 0;
 
-  // Función para redondear al múltiplo de 50 más cercano
   const redondearA50 = (valor: number): number => {
     return Math.round(valor / 50) * 50;
   };
 
-  // Generar valores con variación porcentual (cada donante recibe entre 70% y 130% del promedio)
   for (let i = 0; i < cantidadDonantes - 1; i++) {
-    // Variación porcentual: entre 0.7 y 1.3
     const porcentajeVariacion = 0.7 + Math.random() * 0.6;
     const valorCalculado = valorBase * porcentajeVariacion;
     const valor = redondearA50(valorCalculado);
-    valores.push(Math.max(50, valor)); // Asegurar que sea al menos 50
+    valores.push(Math.max(50, valor));
     sumaAcumulada += valores[i];
   }
 
-  // El último donante recibe la diferencia para alcanzar exactamente el total
   const ultimoValor = valorTotal - sumaAcumulada;
-  valores.push(Math.max(50, ultimoValor)); // Asegurar que sea al menos 50
+  valores.push(Math.max(50, ultimoValor));
 
   return valores;
 };
