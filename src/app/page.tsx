@@ -1,7 +1,7 @@
 'use client';
-
+import Image from 'next/image';
 import React, { useState } from 'react';
-import { Plus, FileText, Shield, TrendingUp, Download } from 'lucide-react';
+import { Plus, FileText, Shield, TrendingUp, Download, Trash2, ArrowRight, CheckCircle } from 'lucide-react';
 import { FormularioRegistro } from '@/components/formRegis';
 import { ListaRegistros } from '@/components/ListaRegistro';
 import { InformeConPanelEdicion } from '@/components/InformeConPanelEdicion';
@@ -40,35 +40,57 @@ export default function SistemaControlDonaciones() {
   const { firmas } = useFirmas();
 
   const handleAgregarRegistro = () => {
+    const registroParaInforme: RegistroDiario = JSON.parse(JSON.stringify(registroActual));
+    const itemsFacturasParaInforme = itemsFacturas.map(item => ({ ...item }));
     const exito = agregarRegistro();
     if (!exito) {
       alert('Por favor completa todos los campos obligatorios');
+      return;
     }
+
+    const nuevoInforme: InformeData = {
+      id: Date.now().toString(),
+      registros: [registroParaInforme],
+      itemsFacturas: itemsFacturasParaInforme,
+      fechaCreacion: new Date()
+    };
+
+    setInformes(prev => [...prev, nuevoInforme]);
+    setInformeActual(nuevoInforme);
   };
 
   const handleGenerarInforme = () => {
-    if (registros.length === 0 && !registroActual.ubicacion) {
+    const tieneRegistroActual = !!registroActual.ubicacion && registroActual.donaciones.valor > 0;
+
+    if (!tieneRegistroActual && informes.length === 0) {
       alert('Debes agregar al menos un registro');
       return;
     }
 
-    // Incluir el registro actual si tiene datos
-    let todosLosRegistros = [...registros];
-    if (registroActual.ubicacion && registroActual.donaciones.valor > 0) {
-      agregarRegistro();
-      todosLosRegistros = [...registros, registroActual];
+    if (tieneRegistroActual) {
+      const registroParaInforme: RegistroDiario = JSON.parse(JSON.stringify(registroActual));
+      const itemsFacturasParaInforme = itemsFacturas.map(item => ({ ...item }));
+      const exito = agregarRegistro();
+      if (!exito) {
+        alert('Por favor completa todos los campos obligatorios');
+        return;
+      }
+
+      const nuevoInforme: InformeData = {
+        id: Date.now().toString(),
+        registros: [registroParaInforme],
+        itemsFacturas: itemsFacturasParaInforme,
+        fechaCreacion: new Date()
+      };
+
+      setInformes(prev => [...prev, nuevoInforme]);
+      setInformeActual(nuevoInforme);
+      setMostrarInforme(true);
+      return;
     }
 
-    // Crear un nuevo informe
-    const nuevoInforme: InformeData = {
-      id: Date.now().toString(),
-      registros: todosLosRegistros,
-      itemsFacturas: itemsFacturas,
-      fechaCreacion: new Date()
-    };
-
-    setInformes([...informes, nuevoInforme]);
-    setInformeActual(nuevoInforme);
+    const ultimoInforme = informes[informes.length - 1];
+    setInformeActual(ultimoInforme);
     setMostrarInforme(true);
   };
 
@@ -116,8 +138,6 @@ export default function SistemaControlDonaciones() {
       return;
     }
     setMostrarMultiplesInformes(true);
-    
-    // Ejecutar print después de que se renderice
     setTimeout(() => {
       window.print();
     }, 500);
@@ -125,14 +145,9 @@ export default function SistemaControlDonaciones() {
 
   if (mostrarMultiplesInformes) {
     return (
-      <div>
+      <div className="bg-white min-h-screen">
         {informes.map((informe, idx) => (
-          <div 
-            key={informe.id}
-            style={{
-              pageBreakAfter: idx < informes.length - 1 ? 'always' : 'avoid'
-            }}
-          >
+          <div key={informe.id} style={{ pageBreakAfter: idx < informes.length - 1 ? 'always' : 'avoid' }}>
             <InformeConPanelEdicion 
               registros={informe.registros}
               itemsFacturas={informe.itemsFacturas}
@@ -142,7 +157,6 @@ export default function SistemaControlDonaciones() {
                 setMostrarInforme(false);
               }}
               onActualizarRegistros={(registrosActualizados, itemsActualizados, itemsFacturasActualizados) => {
-                // Actualizar el informe específico en el array
                 setInformes(informes.map(inf => 
                   inf.id === informe.id 
                     ? { ...inf, registros: registrosActualizados, itemsFacturas: itemsFacturasActualizados }
@@ -154,9 +168,9 @@ export default function SistemaControlDonaciones() {
         ))}
         <button
           onClick={() => setMostrarMultiplesInformes(false)}
-          className="fixed bottom-4 left-4 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg print:hidden"
+          className="fixed top-4 left-4 bg-emerald-600 hover:bg-emerald-700 text-white py-2 px-6 rounded-xl shadow-lg print:hidden font-bold transition-all active:scale-95"
         >
-          Volver
+          Volver al Panel
         </button>
       </div>
     );
@@ -177,200 +191,168 @@ export default function SistemaControlDonaciones() {
     );
   }
 
-  const totalRegistros = registros.length;
-  const totalDonaciones = registros.reduce((sum, reg) => sum + reg.donaciones.valor, 0);
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-purple-50 to-blue-50">
-      {/* Navbar */}
-      <nav className="bg-white/80 backdrop-blur-md border-b border-gray-200/50 sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-gradient-to-br from-purple-600 to-blue-600 rounded-xl shadow-lg shadow-purple-500/20">
-              <Shield size={24} className="text-white" />
+    <div className="min-h-screen bg-slate-50 relative overflow-hidden">
+      {/* Luces Ambientales Suaves - Reemplazan el fondo radial oscuro */}
+      <div className="absolute top-0 left-0 w-[600px] h-[600px] bg-emerald-100/30 blur-[120px] rounded-full -z-10 -translate-x-1/2 -translate-y-1/2"></div>
+      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-yellow-100/20 blur-[100px] rounded-full -z-10 translate-x-1/4 -translate-y-1/4"></div>
+
+      {/* Navbar Minimalista */}
+      <nav className="bg-white/60 backdrop-blur-xl border-b border-gray-200/50 sticky top-0 z-40 transition-all">
+        <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="relative w-12 h-12 p-1 bg-white rounded-2xl shadow-sm border border-gray-100">
+              <Image src="/LOGO.png" alt="Fundamiga Logo" fill className="object-contain p-1" priority />
             </div>
             <div>
-              <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-blue-600">Fundamiga</span>
-              <p className="text-xs text-gray-500">Control de Donaciones</p>
+              <span className="text-xl font-black text-slate-800 tracking-tight block leading-none">Fundamiga</span>
+              <div className="flex items-center gap-1.5 mt-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                <p className="text-[10px] font-bold text-emerald-700 uppercase tracking-widest">Control de Donaciones</p>
+              </div>
             </div>
           </div>
-          <div className="flex items-center gap-4">
-            <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gradient-to-r from-purple-100 to-blue-100">
-              <TrendingUp size={16} className="text-purple-600" />
-              <span className="text-sm font-semibold text-purple-600">{totalRegistros} registros</span>
-            </div>
+          <div className="hidden md:flex items-center gap-2 bg-white px-4 py-2 rounded-full border border-emerald-100 shadow-sm">
+            <CheckCircle size={14} className="text-emerald-600" />
+            <span className="text-[10px] font-black text-emerald-700 uppercase tracking-tighter">Sistema Operativo</span>
           </div>
         </div>
       </nav>
 
-      <div className="max-w-7xl mx-auto px-6 py-10">
+      <main className="max-w-7xl mx-auto px-6 py-12 relative">
         {/* Page Header */}
-        <div className="mb-10">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="h-1 w-12 bg-gradient-to-r from-purple-600 to-blue-600 rounded-full"></div>
-            <h1 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-blue-600">
-              Control Diario de Donaciones
+        <div className="mb-12 relative">
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="h-1.5 w-10 bg-emerald-500 rounded-full shadow-sm shadow-emerald-100"></div>
+              <div className="h-1.5 w-4 bg-yellow-400 rounded-full shadow-sm shadow-yellow-100"></div>
+            </div>
+            <h1 className="text-5xl md:text-6xl font-black text-slate-900 tracking-tighter leading-tight">
+              Control Diario de <span className="text-emerald-600">Donaciones</span>
             </h1>
           </div>
-          <p className="text-gray-600 mt-2">Registra y gestiona las donaciones del día</p>
+          <p className="text-slate-500 font-medium mt-4 text-lg max-w-2xl border-l-4 border-yellow-400 pl-6 leading-relaxed">
+            Gestión administrativa y registro centralizado para el seguimiento de impacto social de la fundación.
+          </p>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          <div className="group relative bg-white/80 backdrop-blur-md rounded-xl border border-gray-200/50 p-6 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-purple-500 to-purple-600 opacity-0 group-hover:opacity-5 transition-opacity duration-300"></div>
-            <div className="relative z-10">
-              <div className="flex items-center justify-between mb-4">
-                <p className="text-gray-600 text-sm font-semibold">Total de Registros</p>
-                
-              </div>
-              <p className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-500 to-purple-600">
-                {totalRegistros}
-              </p>
-              <p className="text-gray-500 text-xs mt-3">Registros hoy</p>
-            </div>
-          </div>
-
-          <div className="group relative bg-white/80 backdrop-blur-md rounded-xl border border-gray-200/50 p-6 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-green-500 to-emerald-600 opacity-0 group-hover:opacity-5 transition-opacity duration-300"></div>
-            <div className="relative z-10">
-              <div className="flex items-center justify-between mb-4">
-                <p className="text-gray-600 text-sm font-semibold">Total Donaciones</p>
-                
-              </div>
-              <p className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-green-500 to-emerald-600">
-                ${totalDonaciones.toLocaleString()}
-              </p>
-              <p className="text-gray-500 text-xs mt-3">Monto acumulado</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Main Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Formulario - Takes 2 columns */}
-          <div className="lg:col-span-3">
-            <div className="group bg-white/80 backdrop-blur-md rounded-2xl border border-gray-200/50 overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300">
-              <div className="bg-gradient-to-br from-purple-600 via-purple-600 to-blue-600 px-6 py-5 relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                <div className="relative flex items-center gap-3">
-                  <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
-                    <Plus size={20} className="text-white" />
+        <div className="grid grid-cols-1 gap-12">
+          {/* Contenedor Principal Formulario */}
+          <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-[0_8px_40px_rgba(0,0,0,0.04)] overflow-hidden transition-all duration-300">
+            {/* Header del Formulario Interno */}
+            <div className="group relative bg-white px-8 py-8 border-b border-gray-50 overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-r from-emerald-50/20 via-transparent to-yellow-50/20"></div>
+              <div className="relative flex items-center justify-between">
+                <div className="flex items-center gap-5">
+                  <div className="relative">
+                    <div className="p-4 bg-white rounded-2xl border-2 border-emerald-500 text-emerald-600 shadow-lg shadow-emerald-50 group-hover:border-yellow-400 group-hover:text-yellow-600 transition-all duration-500 transform group-hover:rotate-6">
+                      <Plus size={24} strokeWidth={3} />
+                    </div>
+                    <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-yellow-400 rounded-full border-2 border-white shadow-sm"></div>
                   </div>
-                  <h2 className="text-lg font-bold text-white">Nuevo Registro</h2>
+                  <div>
+                    <h2 className="text-2xl font-black text-slate-800 tracking-tight">Nuevo Registro Diario</h2>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-[9px] font-black px-2 py-0.5 bg-emerald-500 text-white rounded-md uppercase tracking-wider">Módulo de Ingreso</span>
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Validación de Fondos</span>
+                    </div>
+                  </div>
                 </div>
               </div>
-              <div className="p-6 bg-white/50">
-                <FormularioRegistro
-                  registroActual={registroActual}
-                  itemsFacturas={itemsFacturas}
-                  onInputChange={handleInputChange}
-                  onDonacionChange={handleDonacionChange}
-                  onFacturaChange={handleFacturaChange}
-                  onItemsFacturasChange={handleItemsFacturasChange}
-                  onFirmaChange={handleFirmaChange}
-                />
+            </div>
 
-                <div className="flex gap-3 mt-6">
-                  <button
-                    onClick={handleAgregarRegistro}
-                    className="flex-1 bg-gradient-to-r from-purple-600 to-purple-700 text-white py-3 px-6 rounded-xl hover:from-purple-700 hover:to-purple-800 font-semibold flex items-center justify-center gap-2 shadow-lg shadow-purple-500/30 transition-all duration-200"
-                  >
-                    <Plus size={20} />
-                    Agregar Registro
-                  </button>
+            {/* Espacio del Formulario */}
+            <div className="p-8">
+              <FormularioRegistro
+                registroActual={registroActual}
+                itemsFacturas={itemsFacturas}
+                onInputChange={handleInputChange}
+                onDonacionChange={handleDonacionChange}
+                onFacturaChange={handleFacturaChange}
+                onItemsFacturasChange={handleItemsFacturasChange}
+                onFirmaChange={handleFirmaChange}
+              />
 
-                  <button
-                    onClick={handleGenerarInforme}
-                    className="flex-1 bg-gradient-to-r from-green-600 to-emerald-700 text-white py-3 px-6 rounded-xl hover:from-green-700 hover:to-emerald-800 font-semibold flex items-center justify-center gap-2 shadow-lg shadow-green-500/30 transition-all duration-200"
-                  >
-                    <FileText size={20} />
-                    Generar Informe
-                  </button>
-                </div>
+              {/* Botones de Acción */}
+              <div className="flex flex-col sm:flex-row gap-5 mt-12">
+                <button
+                  onClick={handleAgregarRegistro}
+                  className="flex-[1.5] group relative bg-emerald-600 hover:bg-emerald-700 text-white py-4 px-8 rounded-2xl font-black text-lg flex items-center justify-center gap-3 shadow-xl shadow-emerald-100 transition-all duration-300 active:scale-[0.98] overflow-hidden"
+                >
+                  <Plus size={22} strokeWidth={3} />
+                  <span>Añadir Registro</span>
+                </button>
+
+                <button
+                  onClick={handleGenerarInforme}
+                  className="flex-1 group relative bg-yellow-400 hover:bg-yellow-500 text-yellow-950 py-4 px-8 rounded-2xl font-black text-lg flex items-center justify-center gap-3 shadow-xl shadow-yellow-50 transition-all duration-300 active:scale-[0.98] border-b-4 border-yellow-600"
+                >
+                  <FileText size={22} strokeWidth={3} />
+                  <span>Generar Informe</span>
+                  <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+                </button>
               </div>
             </div>
           </div>
 
-          {/* Lista de Registros */}
-          {registros.length > 0 && (
-            <div className="lg:col-span-3">
-              <div className="bg-white/80 backdrop-blur-md rounded-2xl border border-gray-200/50 overflow-hidden shadow-sm">
-                <div className="bg-gradient-to-br from-blue-600 to-indigo-600 px-6 py-4">
-                  <h3 className="text-lg font-bold text-white">Registros Agregados</h3>
-                </div>
-                <div className="p-6">
-                  <ListaRegistros
-                    registros={registros}
-                    onEliminar={eliminarRegistro}
-                  />
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Informes Generados */}
+          {/* Historial de Informes */}
           {informes.length > 0 && (
-            <div className="lg:col-span-3">
-              <div className="bg-white/80 backdrop-blur-md rounded-2xl border border-gray-200/50 overflow-hidden shadow-sm">
-                <div className="bg-gradient-to-br from-amber-600 to-orange-600 px-6 py-4 flex items-center justify-between">
-                  <h3 className="text-lg font-bold text-white">Informes Generados ({informes.length})</h3>
-                  <button
-                    onClick={handleDescargarPDFMultiple}
-                    className="bg-white/20 hover:bg-white/30 text-white py-2 px-4 rounded-lg text-sm font-semibold transition-colors flex items-center gap-2"
-                  >
-                    <Download size={16} />
-                    Descargar Todos
-                  </button>
-                </div>
-                <div className="p-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {informes.map((informe) => (
-                      <div key={informe.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-lg transition-shadow">
-                        <div className="flex items-start justify-between mb-3">
-                          <div>
-                            <h4 className="font-semibold text-gray-800">
-                              Informe #{informes.indexOf(informe) + 1}
-                            </h4>
-                            <p className="text-xs text-gray-500">
-                              {informe.fechaCreacion.toLocaleString()}
-                            </p>
-                          </div>
-                        </div>
-                        
-                        <div className="space-y-2 mb-4 text-sm text-gray-600">
-                          <p><span className="font-semibold">Registros:</span> {informe.registros.length}</p>
-                          <p><span className="font-semibold">Facturas:</span> {informe.itemsFacturas.length}</p>
-                          <p><span className="font-semibold">Total:</span> $
-                            {informe.registros.reduce((sum, reg) => sum + reg.donaciones.valor, 0).toLocaleString()}
-                          </p>
-                        </div>
-
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => handleVerInforme(informe)}
-                            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 px-3 rounded-lg text-sm font-semibold transition-colors"
-                          >
-                            Ver
-                          </button>
-                          <button
-                            onClick={() => handleEliminarInforme(informe.id)}
-                            className="bg-red-600 hover:bg-red-700 text-white py-2 px-3 rounded-lg text-sm font-semibold transition-colors"
-                          >
-                            ✕
-                          </button>
-                        </div>
-                      </div>
-                    ))}
+            <div className="space-y-8 pb-10">
+              <div className="flex items-center justify-between px-2">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-yellow-400 rounded-2xl flex items-center justify-center shadow-lg shadow-yellow-100">
+                    <TrendingUp size={24} className="text-yellow-900" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-black text-slate-800 tracking-tight">Historial del Día</h3>
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">{informes.length} Informes listos</p>
                   </div>
                 </div>
+                <button
+                  onClick={handleDescargarPDFMultiple}
+                  className="bg-white hover:bg-emerald-50 text-emerald-700 py-3 px-6 rounded-2xl text-xs font-black transition-all flex items-center gap-3 border border-emerald-100 shadow-sm"
+                >
+                  <Download size={18} />
+                  Descargar Todo (PDF)
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {informes.map((informe, index) => (
+                  <div key={informe.id} className="group bg-white rounded-3xl p-6 shadow-sm border border-slate-100 hover:shadow-2xl hover:shadow-emerald-100/30 transition-all duration-500">
+                    <div className="flex items-start justify-between mb-6">
+                      <div className="p-3 bg-emerald-50 rounded-2xl text-emerald-600 group-hover:bg-emerald-500 group-hover:text-white transition-all duration-500">
+                        <FileText size={20} />
+                      </div>
+                      <div className="text-right">
+                        <span className="text-[10px] font-black text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full uppercase tracking-tighter">Informe #{index + 1}</span>
+                        <p className="text-[11px] font-bold text-slate-400 uppercase mt-2">{new Date(informe.fechaCreacion).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' })}</p>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-4 mb-8">
+                      <div className="flex justify-between items-end border-b border-slate-50 pb-3">
+                        <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Total</span>
+                        <span className="text-2xl font-black text-slate-800">${informe.registros.reduce((sum, reg) => sum + reg.donaciones.valor, 0).toLocaleString()}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-3">
+                      <button onClick={() => handleVerInforme(informe)} className="flex-1 bg-slate-900 text-white py-3 rounded-2xl text-xs font-black hover:bg-emerald-600 transition-all flex items-center justify-center gap-2">
+                        Ver Detalles <ArrowRight size={14} />
+                      </button>
+                      <button onClick={() => handleEliminarInforme(informe.id)} className="p-3 bg-red-50 text-red-500 hover:bg-red-500 hover:text-white rounded-2xl transition-all">
+                        <Trash2 size={18} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           )}
         </div>
-      </div>
+      </main>
 
-      {/* Botón flotante para acceder al panel admin */}
       <BotonAccesoAdmin />
     </div>
   );
