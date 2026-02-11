@@ -5,9 +5,9 @@ import Link from 'next/link';
 export const BotonAccesoAdmin: React.FC = () => {
   return (
     <Link href="/admin">
-      <button className="fixed bottom-8 right-8 group z-50 flex items-center">
+      <button className="fixed bottom-8 left-8 group z-50 flex items-center">
   {/* Tooltip flotante con estilo de marca */}
-  <span className="absolute right-16 px-4 py-2 bg-white/90 backdrop-blur-md border border-emerald-100 text-emerald-800 text-xs font-black uppercase tracking-widest rounded-2xl shadow-xl opacity-0 group-hover:opacity-100 transition-all duration-300 translate-x-4 group-hover:translate-x-0 pointer-events-none">
+  <span className="absolute left-16 px-4 py-2 bg-white/90 backdrop-blur-md border border-emerald-100 text-emerald-800 text-xs font-black uppercase tracking-widest rounded-2xl shadow-xl opacity-0 group-hover:opacity-100 transition-all duration-300 translate-x-4 group-hover:translate-x-0 pointer-events-none">
     Panel Administrativo
   </span>
 
