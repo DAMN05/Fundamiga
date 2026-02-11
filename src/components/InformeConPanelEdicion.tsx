@@ -387,7 +387,9 @@ export const InformeConPanelEdicion: React.FC<InformeConPanelEdicionProps> = ({
                       })()}
                     </div>
                     <div className="pt-2">
+                      
                       <div className="font-bold">TRABAJADOR</div>
+                      <div className="font-bold">CARGO : Auxiliar de parqueo</div>
                       <div className="text-sm">{primerRegistro.firmas.trabajador?.nombre || ''}</div>
                     </div>
                   </div>
@@ -409,7 +411,9 @@ export const InformeConPanelEdicion: React.FC<InformeConPanelEdicionProps> = ({
                       })()}
                     </div>
                     <div className="pt-2">
+                      
                       <div className="font-bold">SUPERVISOR</div>
+                      <div className="font-bold">CARGO : Supervisor</div>
                       <div className="text-sm">{primerRegistro.firmas.supervisor?.nombre || ''}</div>
                     </div>
                   </div>
@@ -431,7 +435,9 @@ export const InformeConPanelEdicion: React.FC<InformeConPanelEdicionProps> = ({
                       })()}
                     </div>
                     <div className="pt-2">
+                      
                       <div className="font-bold">RESPONSABLE DE CONTEO</div>
+                      <div className="font-bold">CARGO : Tesorera</div>
                       <div className="text-sm">{primerRegistro.firmas.responsable?.nombre || ''}</div>
                     </div>
                   </div>
