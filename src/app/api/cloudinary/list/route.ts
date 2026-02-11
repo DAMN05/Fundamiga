@@ -10,18 +10,22 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Tipo requerido' }, { status: 400 });
     }
 
-    // Buscar en múltiples ubicaciones posibles
-    let result = null;
+    // 🔧 FIX: Usar la misma lógica que upload
+    const carpeta = tipo === 'responsable' ? 'responsable_conteos' : `${tipo}s`;
+    
+    // Buscar exactamente donde se guardan
     const searchPrefixes = [
-      `firmas/${tipo}`,
-      `firmas/${tipo}s`,
-      `firmas/${tipo === 'responsable' ? 'responsable_conteos' : tipo}`,
-      tipo,
-      `${tipo}s`
+      `firmas/${carpeta}`,  // ✅ Esta es la ruta correcta
+      `firmas/${tipo}`,     // Fallback
+      carpeta,              // Fallback
+      tipo                  // Fallback
     ];
+
+    let result = null;
 
     for (const prefix of searchPrefixes) {
       try {
+        console.log('🔍 Buscando en:', prefix); // Debug
         const resources = await cloudinary.api.resources({
           type: 'upload',
           prefix: prefix,
@@ -29,10 +33,12 @@ export async function GET(request: NextRequest) {
         });
         
         if (resources.resources && resources.resources.length > 0) {
+          console.log('✅ Encontrado en:', prefix, 'Cantidad:', resources.resources.length);
           result = resources;
           break;
         }
       } catch (e) {
+        console.log('❌ No encontrado en:', prefix);
         continue;
       }
     }
@@ -44,7 +50,6 @@ export async function GET(request: NextRequest) {
     const firmas = (result.resources || []).map((resource: any) => {
       const nombreArchivo = resource.public_id.split('/').pop() || resource.public_id;
       
-      // Construir URL segura
       const url = `https://res.cloudinary.com/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload/${resource.public_id}`;
       
       return {
