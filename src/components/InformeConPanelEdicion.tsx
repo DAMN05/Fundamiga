@@ -592,17 +592,37 @@ export const InformeConPanelEdicion: React.FC<InformeConPanelEdicionProps> = ({
                 </label>
                 <div className="space-y-2">
                   {registrosEditables.map((reg, idx) => (
-                    <div key={idx} className="relative">
-                      <input
-                        type="text"
+                    <div key={idx} className="group relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                      </span>
+                      <select
                         value={reg.ubicacion}
                         onChange={(e) => handleActualizarRegistro(idx, 'ubicacion', e.target.value)}
-                        className="w-full p-3 bg-slate-50 border-none rounded-2xl text-sm font-mono font-medium text-slate-700 focus:ring-2 focus:ring-amber-400 focus:bg-white transition-all outline-none"
-                        placeholder={`Nombre de ubicación ${idx + 1}`}
-                      />
-                      <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-300">
-                        #{idx + 1}
-                      </span>
+                        className="w-full pl-11 pr-10 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-medium text-slate-700 focus:bg-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-50 transition-all outline-none appearance-none cursor-pointer group-focus-within:border-emerald-500"
+                      >
+                        <option value="" disabled>
+                          Seleccionar...
+                        </option>
+                        <option value="2da con 10"> 2da con 10</option>
+                        <option value="5ta con 6ta"> 5ta con 6ta</option>
+                        <option value="6ta con 6ta"> 6ta con 6ta</option>
+                        <option value="Bolivar"> Bolivar</option>
+                        <option value="Carton Colombia"> Carton Colombia</option>
+                        <option value="Guacanda"> Guacanda</option>
+                        <option value="Galeria"> Galeria</option>
+                        <option value="Guabinas"> Guabinas</option>
+                        <option value="Mayorista"> Mayorista</option>
+                        <option value="Rozo"> Rozo</option>
+                      </select>
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                        </svg>
+                      </div>
                     </div>
                   ))}
                 </div>
