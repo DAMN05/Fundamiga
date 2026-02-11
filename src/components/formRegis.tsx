@@ -100,13 +100,25 @@ export const FormularioRegistro: React.FC<FormularioRegistroProps> = ({
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
             </span>
-            <input
-              type="text"
+            <select
               value={registroActual.ubicacion}
               onChange={(e) => onInputChange('ubicacion', e.target.value)}
-              placeholder="Ej: 5 - 6"
-              className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-700 font-medium focus:bg-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-50 transition-all outline-none"
-            />
+              className="w-full pl-11 pr-10 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-700 font-medium focus:bg-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-50 transition-all outline-none appearance-none cursor-pointer"
+            >
+              <option value="" disabled>
+                Seleccionar...
+              </option>
+              <option value="2da con 10"> 2da con 10</option>
+              <option value="5ta con 6ta"> 5ta con 6ta</option>
+              <option value="6ta con 6ta"> 6ta con 6ta</option>
+              <option value="Bolivar"> Bolivar</option>
+              <option value="Carton Colombia"> Carton Colombia</option>
+              <option value="Guacanda"> Guacanda</option>
+              <option value="Galeria"> Galeria</option>
+              <option value="Guabinas"> Guabinas</option>
+              <option value="Mayorista"> Mayorista</option>
+              <option value="Rozo"> Rozo</option>              
+            </select>
           </div>
         </div>
 
