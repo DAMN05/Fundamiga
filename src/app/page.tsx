@@ -9,6 +9,7 @@ import { BotonAccesoAdmin } from '@/components/BotonAccesoAdmin';
 import { useRegistroDiario } from '@/hooks/useRegistroDiario';
 import { useFirmas } from '@/hooks/UseFirmas';
 import { RegistroDiario, ItemTabla, ItemFactura } from '@/types';
+import DonacionesErrorBoundary from '@/components/DonacionesErrorBoundary';
 
 interface InformeData {
   id: string;
@@ -178,6 +179,14 @@ export default function SistemaControlDonaciones() {
 
   if (mostrarInforme && informeActual) {
     return (
+      <DonacionesErrorBoundary
+  key={mostrarInforme ? 'informe' : 'formulario'}
+  onResetReal={() => {
+    setMostrarInforme(false);
+    setInformeActual(null);
+  }}
+>
+
       <>
         <InformeConPanelEdicion 
           registros={informeActual.registros}
@@ -188,6 +197,7 @@ export default function SistemaControlDonaciones() {
         />
         <BotonAccesoAdmin />
       </>
+      </DonacionesErrorBoundary>
     );
   }
 

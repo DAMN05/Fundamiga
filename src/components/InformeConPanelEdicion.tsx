@@ -3,7 +3,8 @@ import { FileText, Download, Edit, Save, X, ChevronRight, Trash2, Plus , Info,Ch
 import { RegistroDiario, ItemTabla, ItemFactura, Firma } from '@/types';
 import { useFirmas } from '@/hooks/UseFirmas';
 import { generarItemsTabla, calcularTotalDonaciones, calcularTotalGeneral } from '@/utils/calculosInforme';
-
+import DonacionesErrorBoundary from '@/components/DonacionesErrorBoundary';
+import Image from 'next/image';
 interface InformeConPanelEdicionProps {
   registros: RegistroDiario[];
   itemsFacturas: ItemFactura[];
@@ -149,7 +150,10 @@ export const InformeConPanelEdicion: React.FC<InformeConPanelEdicionProps> = ({
       return nuevos;
     });
   };
-
+  const handleErrorReset = () => {
+  setItemsEditables([...itemsGuardados]);
+  setRegistrosEditables([...registros]);
+};
   const handleEliminarItemFactura = (index: number) => {
     if (confirm('¿Estás seguro de eliminar este registro de factura?')) {
       setItemsFacturasEditables(prev => {
@@ -185,6 +189,7 @@ export const InformeConPanelEdicion: React.FC<InformeConPanelEdicionProps> = ({
   };
 
   return (
+    
     <div className="min-h-screen bg-gray-50 relative">
       {/* Informe Principal */}
       <div className={`transition-all duration-300 ${panelAbierto ? 'mr-[600px]' : 'mr-0'}`}>
@@ -193,6 +198,9 @@ export const InformeConPanelEdicion: React.FC<InformeConPanelEdicionProps> = ({
             {/* HEADER DEL INFORME */}
             <div className="bg-slate-900 text-white p-6 border-x-2 border-t-2 border-slate-900 rounded-t-xl flex flex-col md:flex-row justify-between items-center gap-4">
               <div className="flex items-center gap-4">
+                <div className="relative w-12 h-12 p-1 bg-white rounded-2xl shadow-sm border border-gray-100">
+                  <Image src="/LOGO.png" alt="Fundamiga Logo" fill className="object-contain p-1" priority />
+                </div>
                 {/* Un toque visual: Línea vertical de acento */}
                 <div className="h-12 w-1.5 bg-amber-400 rounded-full"></div>
                 <div>
@@ -935,5 +943,6 @@ export const InformeConPanelEdicion: React.FC<InformeConPanelEdicionProps> = ({
         />
       )}
     </div>
+  
   );
 };
