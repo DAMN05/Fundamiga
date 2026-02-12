@@ -1,6 +1,8 @@
 import React from 'react';
 import { RegistroDiario, Donacion, Firma, FacturaElectronica, ItemFactura } from '@/types';
 import { useFirmas } from '@/hooks/UseFirmas';
+import { useDonacionesValidation } from '@/hooks/usedonacionesvalidation';
+import ValidationMessage from '@/components/ValidationMessage';
 import { calcularValorPorDonante } from '@/utils/calculosInforme';
 import { SeccionFacturasElectronicas } from '@/components/SeccionFacturasElectronicas';
 
@@ -24,6 +26,13 @@ export const FormularioRegistro: React.FC<FormularioRegistroProps> = ({
   onFirmaChange
 }) => {
   const { firmas, loading, error } = useFirmas();
+
+  // Hook de validación en tiempo real
+  const validation = useDonacionesValidation(
+    registroActual.donaciones.valor || 0,
+    registroActual.donaciones.cantidadDonantes || 0,
+    registroActual.tipoParqueadero
+  );
 
   // Handler para cambio de firma desde el select
   const handleSelectFirma = (
@@ -157,7 +166,7 @@ export const FormularioRegistro: React.FC<FormularioRegistroProps> = ({
       </div>
     </div>
 
-      {/* Donaciones */}
+      {/* Donaciones - CON VALIDACIÓN */}
       <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm relative overflow-hidden">
       {/* Barra lateral decorativa Emerald */}
       <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-emerald-500"></div>
@@ -181,10 +190,15 @@ export const FormularioRegistro: React.FC<FormularioRegistroProps> = ({
             <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-semibold">$</span>
             <input
               type="number"
-              placeholder="0.00"
+              placeholder="0"
+              step="50"
               value={registroActual.donaciones.valor || ''}
               onChange={(e) => onDonacionChange('valor', Number(e.target.value))}
-              className="w-full pl-8 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-700 font-medium focus:bg-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-50 transition-all outline-none"
+              className={`w-full pl-8 pr-4 py-3 bg-gray-50 border rounded-xl text-gray-700 font-medium focus:bg-white focus:ring-4 transition-all outline-none ${
+                validation.error
+                  ? 'border-red-300 focus:border-red-500 focus:ring-red-50'
+                  : 'border-gray-200 focus:border-emerald-500 focus:ring-emerald-50'
+              }`}
             />
           </div>
         </div>
@@ -203,6 +217,7 @@ export const FormularioRegistro: React.FC<FormularioRegistroProps> = ({
             <input
               type="number"
               placeholder="0"
+              min="1"
               value={registroActual.donaciones.cantidadDonantes || ''}
               onChange={(e) => onDonacionChange('cantidadDonantes', Number(e.target.value))}
               className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-700 font-medium focus:bg-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-50 transition-all outline-none"
@@ -210,6 +225,26 @@ export const FormularioRegistro: React.FC<FormularioRegistroProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Mensajes de validación en tiempo real */}
+      {validation.error && (
+        <div className="mt-4">
+          <ValidationMessage
+            type="error"
+            message={validation.error}
+            suggestion={validation.suggestion}
+          />
+        </div>
+      )}
+
+      {validation.warning && !validation.error && (
+        <div className="mt-4">
+          <ValidationMessage
+            type="info"
+            message={validation.warning}
+          />
+        </div>
+      )}
     </div>
 
       {/* Valor Adicional - Facturas Electrónicas */}
@@ -220,7 +255,7 @@ export const FormularioRegistro: React.FC<FormularioRegistroProps> = ({
         onItemsChange={onItemsFacturasChange}
       />
 
-      {/* Firmas - CORREGIDO */}
+      {/* Firmas */}
       <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm relative overflow-hidden">
       {/* Detalle estético: barra lateral Emerald */}
       <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-emerald-500"></div>
