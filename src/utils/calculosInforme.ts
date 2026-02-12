@@ -1,5 +1,22 @@
 import { RegistroDiario, ItemTabla } from '../types';
 
+// Clase de error personalizada para donaciones
+export class DonacionError extends Error {
+  constructor(
+    message: string,
+    public details?: {
+      total?: number;
+      cantidad?: number;
+      minimo?: number;
+      maximo?: number;
+      sugerencia?: string;
+    }
+  ) {
+    super(message);
+    this.name = 'DonacionError';
+  }
+}
+
 // Valores base permitidos para motos
 const VALORES_MOTOS = [
   300, 300, 350, 400, 450, 500, 500, 500, 550, 600, 650, 700, 750, 800, 900, 950,
@@ -32,13 +49,43 @@ export const generarDonaciones = (
   const MIN = tipo === 'motos' ? MIN_MOTOS : MIN_CARROS;
   const valoresBase = tipo === 'motos' ? VALORES_MOTOS : VALORES_CARROS;
 
-  // Validaciones
-  if (total < cantidad * MIN || total > cantidad * MAX) {
-    throw new Error('El total no cuadra con la cantidad de donaciones');
+  const minPosible = cantidad * MIN;
+  const maxPosible = cantidad * MAX;
+
+  // Validaciones mejoradas con información detallada
+  if (total < minPosible) {
+    throw new DonacionError(
+      `El total es muy bajo para ${cantidad} donante${cantidad > 1 ? 's' : ''}`,
+      {
+        total,
+        cantidad,
+        minimo: minPosible,
+        sugerencia: `El mínimo permitido es $${minPosible.toLocaleString('es-CO')} para ${cantidad} donante${cantidad > 1 ? 's' : ''} de ${tipo}`
+      }
+    );
+  }
+
+  if (total > maxPosible) {
+    throw new DonacionError(
+      `El total es muy alto para ${cantidad} donante${cantidad > 1 ? 's' : ''}`,
+      {
+        total,
+        cantidad,
+        maximo: maxPosible,
+        sugerencia: `El máximo permitido es $${maxPosible.toLocaleString('es-CO')} para ${cantidad} donante${cantidad > 1 ? 's' : ''}`
+      }
+    );
   }
 
   if (total % 50 !== 0) {
-    throw new Error('El total debe ser múltiplo de 50');
+    const totalRedondeado = Math.round(total / 50) * 50;
+    throw new DonacionError(
+      'El total debe ser múltiplo de 50',
+      {
+        total,
+        sugerencia: `Intenta con $${totalRedondeado.toLocaleString('es-CO')}`
+      }
+    );
   }
 
   // Inicializar todas las donaciones con el valor mínimo
